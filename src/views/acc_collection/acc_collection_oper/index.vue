@@ -9,7 +9,16 @@
           @submit.native.prevent
         >
           <el-form-item>
-            <el-input v-model="queryForm.author" placeholder="作者" />
+            <el-input v-model="queryForm.payeracc" placeholder="监管账号" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="queryForm.contractno" placeholder="协议编号" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="queryForm.datadate" placeholder="归集日期" />
+          </el-form-item>
+          <el-form-item>
+            <el-input v-model="queryForm.isgj" placeholder="是否归集" />
           </el-form-item>
           <el-form-item>
             <el-button
@@ -40,6 +49,8 @@
     <el-table
       ref="tableSort"
       v-loading="listLoading"
+      border
+      highlight-current-row
       :data="list"
       :element-loading-text="elementLoadingText"
       :height="height"
@@ -58,48 +69,46 @@
       </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        prop="title"
-        label="标题"
+        prop="payeracc"
+        label="监管账号"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="作者"
-        prop="author"
+        label="开发商"
+        prop="payername"
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="头像">
-        <template #default="{ row }">
-          <el-image
-            v-if="imgShow"
-            :preview-src-list="imageList"
-            :src="row.img"
-          ></el-image>
-        </template>
-      </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="点击量"
-        prop="pageViews"
+        label="协议编号"
+        prop="contractno"
         sortable
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="状态">
-        <template #default="{ row }">
-          <el-tooltip
-            :content="row.status"
-            class="item"
-            effect="dark"
-            placement="top-start"
-          >
-            <el-tag :type="row.status | statusFilter">
-              {{ row.status }}
-            </el-tag>
-          </el-tooltip>
-        </template>
-      </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="时间"
-        prop="datetime"
-        width="200"
+        label="归集金额"
+        prop="amt"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="机构号"
+        prop="orgid"
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="机构名称"
+        prop="orgname"
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="归集日期"
+        prop="datadate"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="归集状态"
+        prop="isgj"
       ></el-table-column>
       <el-table-column show-overflow-tooltip label="操作" width="180px">
         <template #default="{ row }">
@@ -117,13 +126,14 @@
       @current-change="handleCurrentChange"
       @size-change="handleSizeChange"
     ></el-pagination>
-    <table-edit ref="edit"></table-edit>
+    <table-edit ref="edit" @refresh-data="fetchData"></table-edit>
   </div>
 </template>
 
 <script>
-  import { getList, doDelete } from '@/api/table'
+  import { getList, doDelete, GetGjinfoList } from '@/api/table'
   import TableEdit from './components/TableEdit'
+  import store from '@/store'
   export default {
     name: 'ComprehensiveTable',
     components: {
@@ -153,8 +163,14 @@
         queryForm: {
           pageNo: 1,
           pageSize: 20,
-          title: '',
-          author: '',
+          payeracc: '',
+          pyaername: '',
+          contractno: '',
+          amt: '',
+          orgid: '',
+          orgname: '',
+          datadate: '',
+          isgj: '',
         },
       }
     },
@@ -220,7 +236,13 @@
       },
       async fetchData() {
         this.listLoading = true
-        const { data, totalCount } = await getList(this.queryForm)
+        const { data, totalCount } = await GetGjinfoList(
+          store.getters['user/username'],
+          this.queryForm.pageNo,
+          this.queryForm.pageSize
+        )
+        // console.log('username is:' + store.getters['user/username'])
+
         this.list = data
         //console.log(data)
         const imageList = []

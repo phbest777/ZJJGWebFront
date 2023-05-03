@@ -6,6 +6,14 @@ import request from '@/utils/request'
     data,
   })
 }*/
+
+export function GetGjinfoList(userName, pageNo, pageSize) {
+  return request({
+    url: '/Zjjg/AccCollect/GetGjinfoByUser',
+    method: 'post',
+    data: { username: userName, pageno: pageNo, pagesize: pageSize },
+  })
+}
 export function getList() {
   return request({
     url: '/emps/getlist',
