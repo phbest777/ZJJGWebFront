@@ -26,7 +26,7 @@
   }
 
   .vab-query-form {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
 
     ::v-deep {
       .top-panel {

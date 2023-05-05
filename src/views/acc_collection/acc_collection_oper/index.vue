@@ -8,17 +8,70 @@
           :inline="true"
           @submit.native.prevent
         >
+          <!--<el-form-item>
+            <el-input
+              v-model="queryForm.pyaername"
+              placeholder="开发商"
+              clearable
+              prefix-icon="el-icon-search"
+            />
+          </el-form-item>-->
+          <el-autocomplete
+            v-model.trim="accinfo.jgname"
+            :trigger-on-focus="false"
+            :fetch-suggestions="querySearch"
+            placeholder="开发商"
+            prefix-icon="el-icon-search"
+            @select="handleSelect"
+          ></el-autocomplete>
           <el-form-item>
-            <el-input v-model="queryForm.payeracc" placeholder="监管账号" />
+            <el-input
+              v-model="queryForm.payeracc"
+              placeholder="监管账号"
+              clearable
+              prefix-icon="el-icon-search"
+            />
           </el-form-item>
           <el-form-item>
-            <el-input v-model="queryForm.contractno" placeholder="协议编号" />
+            <el-input
+              v-model="queryForm.contractno"
+              placeholder="协议编号"
+              clearable
+              prefix-icon="el-icon-search"
+            />
           </el-form-item>
           <el-form-item>
-            <el-input v-model="queryForm.datadate" placeholder="归集日期" />
+            <el-input
+              v-model="queryForm.amt"
+              placeholder="归集金额"
+              clearable
+              prefix-icon="el-icon-search"
+            />
           </el-form-item>
           <el-form-item>
-            <el-input v-model="queryForm.isgj" placeholder="是否归集" />
+            <el-date-picker
+              v-model="date"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="yyyyMMdd"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-select
+              v-model="queryForm.isgj"
+              clearable
+              placeholder="归集状态"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button
@@ -131,7 +184,12 @@
 </template>
 
 <script>
-  import { getList, doDelete, GetGjinfoList } from '@/api/table'
+  import {
+    doDelete,
+    GetGjinfoList,
+    GetGjinfoListByChoose,
+    GetAccInfoList,
+  } from '@/api/table'
   import TableEdit from './components/TableEdit'
   import store from '@/store'
   export default {
@@ -169,9 +227,28 @@
           amt: '',
           orgid: '',
           orgname: '',
-          datadate: '',
+          startdate: '',
+          enddate: '',
           isgj: '',
         },
+        options: [
+          {
+            value: '2',
+            label: '全部',
+          },
+          {
+            value: '0',
+            label: '未归集',
+          },
+          {
+            value: '1',
+            label: '已归集',
+          },
+        ],
+        date: [],
+        accinfolist: [],
+        accinfo: { jgaccount: '', jgname: '', contractno: '' },
+        timeout: '',
       }
     },
     computed: {
@@ -236,24 +313,68 @@
       },
       async fetchData() {
         this.listLoading = true
-        const { data, totalCount } = await GetGjinfoList(
-          store.getters['user/username'],
-          this.queryForm.pageNo,
-          this.queryForm.pageSize
-        )
-        // console.log('username is:' + store.getters['user/username'])
+        if (
+          this.queryForm.payeracc === '' &&
+          this.queryForm.contractno === '' &&
+          this.queryForm.datadate === '' &&
+          (this.queryForm.isgj === '' || this.queryForm.isgj === '2')
+        ) {
+          const { data, totalCount, code } = await GetGjinfoList(
+            store.getters['user/username'],
+            this.queryForm.pageNo,
+            this.queryForm.pageSize
+          )
+          //console.log('date is:' + date)
+          //console.log('usernamesss is:' + store.getters['user/username'])
 
-        this.list = data
-        //console.log(data)
-        const imageList = []
-        data.forEach((item, index) => {
-          imageList.push(item.img)
-        })
-        this.imageList = imageList
-        this.total = totalCount
-        setTimeout(() => {
-          this.listLoading = false
-        }, 500)
+          if (code !== '200') {
+            this.list = null
+          } else {
+            this.list = data
+          }
+          //console.log(data)
+          const imageList = []
+          data.forEach((item, index) => {
+            imageList.push(item.img)
+          })
+          this.imageList = imageList
+          this.total = totalCount
+          //console.log('list is :' + data)
+          setTimeout(() => {
+            this.listLoading = false
+          }, 500)
+        } else {
+          this.queryForm.startdate = this.date == null ? '' : this.date[0]
+          this.queryForm.enddate = this.date == null ? '' : this.date[1]
+          const { data, totalCount, code } = await GetGjinfoListByChoose(
+            store.getters['user/username'],
+            this.queryForm.pyaername,
+            this.queryForm.payeracc,
+            this.queryForm.contractno,
+            this.queryForm.amt,
+            this.queryForm.startdate,
+            this.queryForm.enddate,
+            this.queryForm.isgj,
+            this.queryForm.pageNo,
+            this.queryForm.pageSize
+          )
+          if (code === '200') {
+            this.list = data
+          } else {
+            this.list = null
+          }
+          //console.log(data)
+          const imageList = []
+          data.forEach((item, index) => {
+            imageList.push(item.img)
+          })
+          this.imageList = imageList
+          this.total = totalCount
+          //console.log('list is :' + data)
+          setTimeout(() => {
+            this.listLoading = false
+          }, 500)
+        }
       },
       testMessage() {
         this.$baseMessage('test1', 'success')
@@ -282,6 +403,41 @@
       testNotify() {
         this.$baseNotify('测试消息提示', 'test', 'success', 'bottom-right')
       },
+    },
+
+    createStateFilter(queryString) {
+      return (list) => {
+        return list.name.indexOf(queryString) >= 0
+      }
+    },
+    querySearch(queryString, callback) {
+      if (this.accinfo.jgname) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data.data
+            if (res.data.code === '200') {
+              retdata.rows.forEach((item, index) => {
+                item.value = item.jgname
+              })
+              let jgnames = (this.accinfolist = data.rows)
+              let results = queryString
+                ? jgnames.filter(this.createStateFilter(queryString))
+                : jgnames
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      }
     },
   }
 </script>
