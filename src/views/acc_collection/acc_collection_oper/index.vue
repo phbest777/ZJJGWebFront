@@ -16,29 +16,38 @@
               prefix-icon="el-icon-search"
             />
           </el-form-item>-->
-          <el-autocomplete
-            v-model.trim="accinfo.jgname"
-            :trigger-on-focus="false"
-            :fetch-suggestions="querySearch"
-            placeholder="开发商"
-            prefix-icon="el-icon-search"
-            @select="handleSelect"
-          ></el-autocomplete>
           <el-form-item>
-            <el-input
-              v-model="queryForm.payeracc"
-              placeholder="监管账号"
-              clearable
+            <el-autocomplete
+              v-model.trim="queryForm.payername"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByJgName"
+              placeholder="开发商"
               prefix-icon="el-icon-search"
-            />
+              clearable
+              @select="selectHandleByJgname"
+            ></el-autocomplete>
           </el-form-item>
           <el-form-item>
-            <el-input
-              v-model="queryForm.contractno"
-              placeholder="协议编号"
-              clearable
+            <el-autocomplete
+              v-model.trim="queryForm.payeracc"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByJgAcc"
+              placeholder="监管账号"
               prefix-icon="el-icon-search"
-            />
+              clearable
+              @select="selectHandleByJgAccount"
+            ></el-autocomplete>
+          </el-form-item>
+          <el-form-item>
+            <el-autocomplete
+              v-model.trim="queryForm.contractno"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByContractno"
+              placeholder="协议编号"
+              prefix-icon="el-icon-search"
+              clearable
+              @select="selectHandleByContractno"
+            ></el-autocomplete>
           </el-form-item>
           <el-form-item>
             <el-input
@@ -222,7 +231,7 @@
           pageNo: 1,
           pageSize: 20,
           payeracc: '',
-          pyaername: '',
+          payername: '',
           contractno: '',
           amt: '',
           orgid: '',
@@ -316,7 +325,9 @@
         if (
           this.queryForm.payeracc === '' &&
           this.queryForm.contractno === '' &&
-          this.queryForm.datadate === '' &&
+          this.queryForm.startdate === '' &&
+          this.queryForm.enddate === '' &&
+          this.queryForm.payername === '' &&
           (this.queryForm.isgj === '' || this.queryForm.isgj === '2')
         ) {
           const { data, totalCount, code } = await GetGjinfoList(
@@ -348,7 +359,7 @@
           this.queryForm.enddate = this.date == null ? '' : this.date[1]
           const { data, totalCount, code } = await GetGjinfoListByChoose(
             store.getters['user/username'],
-            this.queryForm.pyaername,
+            this.queryForm.payername,
             this.queryForm.payeracc,
             this.queryForm.contractno,
             this.queryForm.amt,
@@ -403,26 +414,36 @@
       testNotify() {
         this.$baseNotify('测试消息提示', 'test', 'success', 'bottom-right')
       },
-    },
-
-    createStateFilter(queryString) {
-      return (list) => {
-        return list.name.indexOf(queryString) >= 0
-      }
-    },
-    querySearch(queryString, callback) {
-      if (this.accinfo.jgname) {
+      createStateFilterByJgname(queryString) {
+        return (list) => {
+          return list.jgname.indexOf(queryString) >= 0
+        }
+      },
+      createStateFilterByJgAccount(queryString) {
+        return (list) => {
+          return list.jgaccount.indexOf(queryString) >= 0
+        }
+      },
+      createStateFilterByContractno(queryString) {
+        return (list) => {
+          return list.contractno.indexOf(queryString) >= 0
+        }
+      },
+      querySearchByJgAcc(queryString, callback) {
         GetAccInfoList(store.getters['user/username'])
           .then((res) => {
-            let retdata = res.data.data
-            if (res.data.code === '200') {
-              retdata.rows.forEach((item, index) => {
-                item.value = item.jgname
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.jgaccount
               })
-              let jgnames = (this.accinfolist = data.rows)
+              let jgaccounts = (this.accinfolist = retdata)
               let results = queryString
-                ? jgnames.filter(this.createStateFilter(queryString))
-                : jgnames
+                ? jgaccounts.filter(
+                    this.createStateFilterByJgAccount(queryString)
+                  )
+                : jgaccounts
+              results = this.arrayReuse(results)
               clearTimeout(this.timeout)
               this.timeout = setTimeout(() => {
                 callback(results)
@@ -437,7 +458,78 @@
           .catch((err) => {
             callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
           })
-      }
+      },
+      querySearchByContractno(queryString, callback) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.contractno
+              })
+              let contractnos = (this.accinfolist = retdata)
+              let results = queryString
+                ? contractnos.filter(
+                    this.createStateFilterByContractno(queryString)
+                  )
+                : contractnos
+              results = this.arrayReuse(results)
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      },
+      querySearchByJgName(queryString, callback) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.jgname
+              })
+              let jgnames = (this.accinfolist = retdata)
+              let results = queryString
+                ? jgnames.filter(this.createStateFilterByJgname(queryString))
+                : jgnames
+              results = this.arrayReuse(results)
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      },
+      selectHandleByJgname(item) {
+        this.queryForm.payername = item.jgname
+      },
+      selectHandleByJgAccount(item) {
+        this.queryForm.payeracc = item.jgaccount
+      },
+      selectHandleByContractno(item) {
+        this.queryForm.contractno = item.contractno
+      },
+      arrayReuse(arr) {
+        const res = new Map()
+        return arr.filter((arr) => !res.has(arr.value) && res.set(arr.value, 1))
+      },
     },
   }
 </script>

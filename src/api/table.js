@@ -47,7 +47,7 @@ export function GetGjinfoListByChoose(
 
 export function GetAccInfoList(userName) {
   return request({
-    url: '/Zjjg/AccCollect/GetAccInfoList',
+    url: '/Zjjg/AccInfo/GetAccInfoList',
     method: 'post',
     data: { username: userName },
   })
