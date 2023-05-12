@@ -65,6 +65,7 @@
               start-placeholder="开始日期"
               end-placeholder="结束日期"
               value-format="yyyyMMdd"
+              @change="getdatepicker"
             ></el-date-picker>
           </el-form-item>
           <el-form-item>
@@ -112,6 +113,7 @@
       ref="tableSort"
       v-loading="listLoading"
       border
+      style="width: 100%"
       highlight-current-row
       :data="list"
       :element-loading-text="elementLoadingText"
@@ -124,7 +126,7 @@
         type="selection"
         width="55"
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="序号" width="95">
+      <el-table-column show-overflow-tooltip label="序号" width="70" fixed>
         <template #default="scope">
           {{ scope.$index + 1 }}
         </template>
@@ -133,22 +135,26 @@
         show-overflow-tooltip
         prop="payeracc"
         label="监管账号"
+        width="120"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="开发商"
         prop="payername"
+        width="150"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="协议编号"
         prop="contractno"
+        width="130"
         sortable
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="归集金额"
         prop="amt"
+        width="100"
         sortable
       ></el-table-column>
       <el-table-column
@@ -165,17 +171,29 @@
         show-overflow-tooltip
         label="归集日期"
         prop="datadate"
+        width="90"
         sortable
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="归集状态"
         prop="isgj"
+        :formatter="stateFormat"
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="操作" width="180px">
+      <el-table-column
+        show-overflow-tooltip
+        label="操作"
+        width="70px"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button type="text" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="text" @click="handleDelete(row)">删除</el-button>
+          <el-button
+            :disabled="row.isgj === '2'"
+            type="text"
+            @click="handleEdit(row)"
+          >
+            执行
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -194,11 +212,10 @@
 
 <script>
   import {
-    doDelete,
     GetGjinfoList,
     GetGjinfoListByChoose,
     GetAccInfoList,
-  } from '@/api/table'
+  } from '@/api/gjinfo'
   import TableEdit from './components/TableEdit'
   import store from '@/store'
   export default {
@@ -355,8 +372,6 @@
             this.listLoading = false
           }, 500)
         } else {
-          this.queryForm.startdate = this.date == null ? '' : this.date[0]
-          this.queryForm.enddate = this.date == null ? '' : this.date[1]
           const { data, totalCount, code } = await GetGjinfoListByChoose(
             store.getters['user/username'],
             this.queryForm.payername,
@@ -529,6 +544,17 @@
       arrayReuse(arr) {
         const res = new Map()
         return arr.filter((arr) => !res.has(arr.value) && res.set(arr.value, 1))
+      },
+      stateFormat(row) {
+        if (row.isgj === '0') {
+          return '未归集'
+        } else if (row.isgj === '1') {
+          return '已归集'
+        }
+      },
+      getdatepicker() {
+        this.queryForm.startdate = this.date[0]
+        this.queryForm.enddate = this.date[1]
       },
     },
   }
