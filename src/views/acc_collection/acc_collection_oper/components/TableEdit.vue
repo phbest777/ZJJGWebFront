@@ -16,7 +16,7 @@
         <el-input
           v-model.trim="form.payername"
           autocomplete="off"
-          disabled
+          :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
       <el-form-item label="资金监管账号:" prop="payeracc">
@@ -115,6 +115,7 @@
         },
         title: '',
         dialogFormVisible: false,
+        inputEditable: false,
       }
     },
     created() {},
@@ -122,7 +123,9 @@
       showEdit(row) {
         if (!row) {
           this.title = '添加'
+          this.inputEditable = true
         } else {
+          this.inputEditable = false
           this.title = '资金归集发送'
           this.form = Object.assign({}, row)
           this.form.submitdate = this.getDate()
@@ -198,6 +201,9 @@
         //let currentTime = hh + mf + ss
         return currentTime
       },
+    },
+    inputIsEdit() {
+      this.inputEditable = !this.inputEditable
     },
   }
 </script>

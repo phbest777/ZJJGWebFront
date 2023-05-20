@@ -58,6 +58,21 @@
             />
           </el-form-item>
           <el-form-item>
+            <el-select
+              v-model="orgidlist.orgid"
+              clearable
+              placeholder="机构查询"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in orgidlist"
+                :key="item.id"
+                :label="item.orgid"
+                :value="item.orgid"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
             <el-date-picker
               v-model="date"
               type="daterange"
@@ -272,6 +287,7 @@
           },
         ],
         date: [],
+        orgidlist: [],
         accinfolist: [],
         accinfo: { jgaccount: '', jgname: '', contractno: '' },
         timeout: '',
@@ -286,7 +302,9 @@
       this.fetchData()
     },
     beforeDestroy() {},
-    mounted() {},
+    mounted() {
+      //this.fetchData()
+    },
     methods: {
       tableSortChange() {
         const imageList = []
@@ -347,7 +365,7 @@
           this.queryForm.payername === '' &&
           (this.queryForm.isgj === '' || this.queryForm.isgj === '2')
         ) {
-          const { data, totalCount, code } = await GetGjinfoList(
+          const { data, totalCount, code, orgidlist } = await GetGjinfoList(
             store.getters['user/username'],
             this.queryForm.pageNo,
             this.queryForm.pageSize
@@ -359,6 +377,7 @@
             this.list = null
           } else {
             this.list = data
+            this.orgidlist = orgidlist
           }
           //console.log(data)
           const imageList = []
@@ -372,20 +391,22 @@
             this.listLoading = false
           }, 500)
         } else {
-          const { data, totalCount, code } = await GetGjinfoListByChoose(
-            store.getters['user/username'],
-            this.queryForm.payername,
-            this.queryForm.payeracc,
-            this.queryForm.contractno,
-            this.queryForm.amt,
-            this.queryForm.startdate,
-            this.queryForm.enddate,
-            this.queryForm.isgj,
-            this.queryForm.pageNo,
-            this.queryForm.pageSize
-          )
+          const { data, totalCount, code, orgidlist } =
+            await GetGjinfoListByChoose(
+              store.getters['user/username'],
+              this.queryForm.payername,
+              this.queryForm.payeracc,
+              this.queryForm.contractno,
+              this.queryForm.amt,
+              this.queryForm.startdate,
+              this.queryForm.enddate,
+              this.queryForm.isgj,
+              this.queryForm.pageNo,
+              this.queryForm.pageSize
+            )
           if (code === '200') {
             this.list = data
+            this.orgidlist = orgidlist
           } else {
             this.list = null
           }
@@ -553,8 +574,8 @@
         }
       },
       getdatepicker() {
-        this.queryForm.startdate = this.date[0]
-        this.queryForm.enddate = this.date[1]
+        this.queryForm.startdate = this.date ? this.date[0] : ''
+        this.queryForm.enddate = this.date ? this.date[1] : ''
       },
     },
   }
