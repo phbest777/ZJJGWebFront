@@ -52,10 +52,26 @@
           <el-form-item>
             <el-input
               v-model="queryForm.amt"
+              type="number"
               placeholder="归集金额"
               clearable
               prefix-icon="el-icon-search"
             />
+          </el-form-item>
+          <el-form-item>
+            <el-select
+              v-model="queryForm.orgid"
+              clearable
+              placeholder="机构查询"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in orgidlist"
+                :key="item.id"
+                :label="item.orgname"
+                :value="item.orgid"
+              ></el-option>
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-date-picker
@@ -135,19 +151,19 @@
         show-overflow-tooltip
         prop="payeracc"
         label="监管账号"
-        width="120"
+        width="150"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="开发商"
         prop="payername"
-        width="150"
+        width="260"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="协议编号"
         prop="contractno"
-        width="130"
+        width="150"
         sortable
       ></el-table-column>
       <el-table-column
@@ -161,6 +177,7 @@
         show-overflow-tooltip
         label="机构号"
         prop="orgid"
+        width="100"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
@@ -171,15 +188,22 @@
         show-overflow-tooltip
         label="归集日期"
         prop="datadate"
-        width="90"
+        width="120"
         sortable
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="归集状态"
         prop="isgj"
+        width="100"
         :formatter="stateFormat"
-      ></el-table-column>
+      >
+        <template #default="{ row }">
+          <el-tag :type="row.isgj | statusFilter">
+            {{ row.isgj | statusForm }}
+          </el-tag>
+        </template>
+      </el-table-column>
       <el-table-column
         show-overflow-tooltip
         label="操作"
@@ -188,7 +212,7 @@
       >
         <template #default="{ row }">
           <el-button
-            :disabled="row.isgj === '2'"
+            :disabled="row.isgj === '1'"
             type="text"
             @click="handleEdit(row)"
           >
@@ -206,7 +230,8 @@
       @current-change="handleCurrentChange"
       @size-change="handleSizeChange"
     ></el-pagination>
-    <table-edit ref="edit" @refresh-data="fetchData"></table-edit>
+    <gj-table-edit ref="edit-add" @refresh-data="fetchData"></gj-table-edit>
+    <table-edit ref="edit-show" @refresh-data="fetchData"></table-edit>
   </div>
 </template>
 
@@ -217,18 +242,28 @@
     GetAccInfoList,
   } from '@/api/gjinfo'
   import TableEdit from './components/TableEdit'
+  import GjTableEdit from './components/GjTableEdit'
   import store from '@/store'
   export default {
     name: 'ComprehensiveTable',
     components: {
+      GjTableEdit,
       TableEdit,
     },
     filters: {
       statusFilter(status) {
         const statusMap = {
-          published: 'success',
-          draft: 'gray',
-          deleted: 'danger',
+          1: 'success',
+          0: 'danger',
+          //deleted: 'danger',
+        }
+        return statusMap[status]
+      },
+      statusForm(status) {
+        const statusMap = {
+          1: '已归集',
+          0: '未归集',
+          //deleted: 'danger',
         }
         return statusMap[status]
       },
@@ -272,6 +307,7 @@
           },
         ],
         date: [],
+        orgidlist: [],
         accinfolist: [],
         accinfo: { jgaccount: '', jgname: '', contractno: '' },
         timeout: '',
@@ -286,7 +322,9 @@
       this.fetchData()
     },
     beforeDestroy() {},
-    mounted() {},
+    mounted() {
+      //this.fetchData()
+    },
     methods: {
       tableSortChange() {
         const imageList = []
@@ -299,10 +337,10 @@
         this.selectRows = val
       },
       handleAdd() {
-        this.$refs['edit'].showEdit()
+        this.$refs['edit-add'].showEdit()
       },
       handleEdit(row) {
-        this.$refs['edit'].showEdit(row)
+        this.$refs['edit-show'].showEdit(row)
       },
       handleDelete(row) {
         if (row.id) {
@@ -345,9 +383,10 @@
           this.queryForm.startdate === '' &&
           this.queryForm.enddate === '' &&
           this.queryForm.payername === '' &&
+          this.queryForm.orgid === '' &&
           (this.queryForm.isgj === '' || this.queryForm.isgj === '2')
         ) {
-          const { data, totalCount, code } = await GetGjinfoList(
+          const { data, totalCount, code, orgidlist } = await GetGjinfoList(
             store.getters['user/username'],
             this.queryForm.pageNo,
             this.queryForm.pageSize
@@ -359,6 +398,7 @@
             this.list = null
           } else {
             this.list = data
+            this.orgidlist = orgidlist
           }
           //console.log(data)
           const imageList = []
@@ -370,36 +410,42 @@
           //console.log('list is :' + data)
           setTimeout(() => {
             this.listLoading = false
+            //this.listLoading.close()
           }, 500)
         } else {
-          const { data, totalCount, code } = await GetGjinfoListByChoose(
-            store.getters['user/username'],
-            this.queryForm.payername,
-            this.queryForm.payeracc,
-            this.queryForm.contractno,
-            this.queryForm.amt,
-            this.queryForm.startdate,
-            this.queryForm.enddate,
-            this.queryForm.isgj,
-            this.queryForm.pageNo,
-            this.queryForm.pageSize
-          )
-          if (code === '200') {
-            this.list = data
-          } else {
+          try {
+            const { data, totalCount, code } = await GetGjinfoListByChoose(
+              store.getters['user/username'],
+              this.queryForm.payername,
+              this.queryForm.payeracc,
+              this.queryForm.contractno,
+              this.queryForm.amt,
+              this.queryForm.startdate,
+              this.queryForm.enddate,
+              this.queryForm.isgj,
+              this.queryForm.orgid,
+              this.queryForm.pageNo,
+              this.queryForm.pageSize
+            )
+            if (code === '200') {
+              this.list = data
+              const imageList = []
+              data.forEach((item, index) => {
+                imageList.push(item.img)
+              })
+              this.imageList = imageList
+              this.total = totalCount
+              //console.log('list is :' + data)
+              setTimeout(() => {
+                this.listLoading = false
+                //this.listLoading.close()
+              }, 500)
+            }
+          } catch (e) {
             this.list = null
+            this.listLoading = false
           }
           //console.log(data)
-          const imageList = []
-          data.forEach((item, index) => {
-            imageList.push(item.img)
-          })
-          this.imageList = imageList
-          this.total = totalCount
-          //console.log('list is :' + data)
-          setTimeout(() => {
-            this.listLoading = false
-          }, 500)
         }
       },
       testMessage() {
@@ -434,14 +480,15 @@
           return list.jgname.indexOf(queryString) >= 0
         }
       },
-      createStateFilterByJgAccount(queryString) {
-        return (list) => {
-          return list.jgaccount.indexOf(queryString) >= 0
-        }
-      },
+
       createStateFilterByContractno(queryString) {
         return (list) => {
           return list.contractno.indexOf(queryString) >= 0
+        }
+      },
+      createStateFilterByJgAccount(queryString) {
+        return (list) => {
+          return list.jgaccount.indexOf(queryString) >= 0
         }
       },
       querySearchByJgAcc(queryString, callback) {
@@ -553,8 +600,8 @@
         }
       },
       getdatepicker() {
-        this.queryForm.startdate = this.date[0]
-        this.queryForm.enddate = this.date[1]
+        this.queryForm.startdate = this.date ? this.date[0] : ''
+        this.queryForm.enddate = this.date ? this.date[1] : ''
       },
     },
   }

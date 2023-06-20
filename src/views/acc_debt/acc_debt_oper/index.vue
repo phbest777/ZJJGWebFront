@@ -2,18 +2,6 @@
   <div class="table-container">
     <vab-query-form>
       <vab-query-form-left-panel>
-        <el-button icon="el-icon-plus" type="primary" @click="handleAdd">
-          添加
-        </el-button>
-        <el-button icon="el-icon-delete" type="danger" @click="handleDelete">
-          删除
-        </el-button>
-        <el-button type="primary" @click="testMessage">baseMessage</el-button>
-        <el-button type="primary" @click="testALert">baseAlert</el-button>
-        <el-button type="primary" @click="testConfirm">baseConfirm</el-button>
-        <el-button type="primary" @click="testNotify">baseNotify</el-button>
-      </vab-query-form-left-panel>
-      <vab-query-form-right-panel>
         <el-form
           ref="form"
           :model="queryForm"
@@ -21,7 +9,118 @@
           @submit.native.prevent
         >
           <el-form-item>
-            <el-input v-model="queryForm.title" placeholder="标题" />
+            <el-autocomplete
+              v-model.trim="queryForm.payername"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByJgName"
+              placeholder="开发商"
+              prefix-icon="el-icon-search"
+              clearable
+              @select="selectHandleByJgname"
+            ></el-autocomplete>
+          </el-form-item>
+          <el-form-item>
+            <el-autocomplete
+              v-model.trim="queryForm.payeracc"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByJgAcc"
+              placeholder="监管账号"
+              prefix-icon="el-icon-search"
+              clearable
+              @select="selectHandleByJgAccount"
+            ></el-autocomplete>
+          </el-form-item>
+          <el-form-item>
+            <el-autocomplete
+              v-model.trim="queryForm.contractno"
+              :trigger-on-focus="false"
+              :fetch-suggestions="querySearchByContractno"
+              placeholder="协议编号"
+              prefix-icon="el-icon-search"
+              clearable
+              @select="selectHandleByContractno"
+            ></el-autocomplete>
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="queryForm.recordno"
+              placeholder="合同号"
+              clearable
+              prefix-icon="el-icon-search"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="queryForm.ckr"
+              placeholder="存款人"
+              clearable
+              prefix-icon="el-icon-search"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-input
+              v-model="queryForm.price"
+              placeholder="记账金额"
+              type="number"
+              clearable
+              prefix-icon="el-icon-search"
+            />
+          </el-form-item>
+          <el-form-item>
+            <el-select
+              v-model="queryForm.orgid"
+              clearable
+              placeholder="机构查询"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in orgidlist"
+                :key="item.id"
+                :label="item.orgname"
+                :value="item.orgid"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-date-picker
+              v-model="date"
+              type="daterange"
+              range-separator="至"
+              start-placeholder="开始日期"
+              end-placeholder="结束日期"
+              value-format="yyyyMMdd"
+              @change="getdatepicker"
+            ></el-date-picker>
+          </el-form-item>
+          <el-form-item>
+            <el-select
+              v-model="queryForm.flag"
+              clearable
+              placeholder="资金来源"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in options_zjxz"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-select
+              v-model="queryForm.isjz"
+              clearable
+              placeholder="记账状态"
+              @change="$forceUpdate()"
+            >
+              <el-option
+                v-for="item in options"
+                :key="item.value"
+                :label="item.label"
+                :value="item.value"
+              ></el-option>
+            </el-select>
           </el-form-item>
           <el-form-item>
             <el-button
@@ -34,12 +133,27 @@
             </el-button>
           </el-form-item>
         </el-form>
-      </vab-query-form-right-panel>
+      </vab-query-form-left-panel>
+      <vab-query-form-bottom-panel>
+        <el-button icon="el-icon-plus" type="primary" @click="handleAdd">
+          添加
+        </el-button>
+        <el-button icon="el-icon-delete" type="danger" @click="handleDelete">
+          删除
+        </el-button>
+        <el-button type="primary" @click="testMessage">baseMessage</el-button>
+        <el-button type="primary" @click="testALert">baseAlert</el-button>
+        <el-button type="primary" @click="testConfirm">baseConfirm</el-button>
+        <el-button type="primary" @click="testNotify">baseNotify</el-button>
+      </vab-query-form-bottom-panel>
     </vab-query-form>
 
     <el-table
       ref="tableSort"
       v-loading="listLoading"
+      border
+      style="width: 100%"
+      highlight-current-row
       :data="list"
       :element-loading-text="elementLoadingText"
       :height="height"
@@ -51,60 +165,135 @@
         type="selection"
         width="55"
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="序号" width="95">
+      <el-table-column show-overflow-tooltip label="序号" width="50" fixed>
         <template #default="scope">
           {{ scope.$index + 1 }}
         </template>
       </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        prop="title"
-        label="标题"
+        prop="jgaccount"
+        label="监管账号"
+        width="120"
       ></el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="作者"
-        prop="author"
+        label="开发商"
+        prop="jgname"
+        width="245"
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="头像">
-        <template #default="{ row }">
-          <el-image
-            v-if="imgShow"
-            :preview-src-list="imageList"
-            :src="row.img"
-          ></el-image>
-        </template>
-      </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="点击量"
-        prop="pageViews"
+        label="协议编号"
+        prop="xybh"
+        width="135"
         sortable
       ></el-table-column>
-      <el-table-column show-overflow-tooltip label="状态">
+      <el-table-column
+        show-overflow-tooltip
+        label="合同号"
+        prop="recordno"
+        width="135"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="存款人"
+        prop="ckr"
+        width="139"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        v-if="false"
+        show-overflow-tooltip
+        label="操作员"
+        prop="operator"
+        width="80"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="资金来源"
+        prop="zjxz"
+        width="70"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        v-if="false"
+        show-overflow-tooltip
+        label="记账标识"
+        prop="flag"
+        width="150"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        v-if="false"
+        show-overflow-tooltip
+        label="资金性质"
+        prop="cklb"
+        width="150"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="记账金额"
+        prop="price"
+        width="100"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        v-if="false"
+        show-overflow-tooltip
+        label="存款流水号"
+        prop="cklsh"
+        width="100"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="机构号"
+        prop="orgid"
+        width="65"
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="机构名称"
+        prop="orgname"
+        width="160"
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="记账日期"
+        prop="transdate"
+        width="90"
+        sortable
+      ></el-table-column>
+      <el-table-column
+        show-overflow-tooltip
+        label="记账状态"
+        prop="isjz"
+        width="90"
+      >
         <template #default="{ row }">
-          <el-tooltip
-            :content="row.status"
-            class="item"
-            effect="dark"
-            placement="top-start"
-          >
-            <el-tag :type="row.status | statusFilter">
-              {{ row.status }}
-            </el-tag>
-          </el-tooltip>
+          <el-tag :type="row.isjz | statusFilter">
+            {{ row.isjz | statusForm }}
+          </el-tag>
         </template>
       </el-table-column>
       <el-table-column
         show-overflow-tooltip
-        label="时间"
-        prop="datetime"
-        width="200"
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="操作" width="180px">
+        label="操作"
+        width="70px"
+        fixed="right"
+      >
         <template #default="{ row }">
-          <el-button type="text" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="text" @click="handleDelete(row)">删除</el-button>
+          <el-button
+            :disabled="row.isjz === '1'"
+            type="text"
+            @click="handleEdit(row)"
+          >
+            执行
+          </el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -117,24 +306,45 @@
       @current-change="handleCurrentChange"
       @size-change="handleSizeChange"
     ></el-pagination>
-    <table-edit ref="edit"></table-edit>
+    <jz-table-edit-old
+      ref="edit-show"
+      @refresh-data="fetchData"
+    ></jz-table-edit-old>
+    <jz-table-add-old
+      ref="edit-add"
+      @refresh-data="fetchData"
+    ></jz-table-add-old>
   </div>
 </template>
 
 <script>
-  import { getList, doDelete } from '@/api/table'
-  import TableEdit from './components/TableEdit'
+  import { GetAccInfoList } from '@/api/gjinfo'
+  import { GetJzinfoList, GetJzinfoListByChoose } from '@/api/jzinfo'
+  import JzTableEditOld from './components/JzTableEditOld'
+  import JzTableAddOld from './components/JzTableAddOld'
+  //import GjTableEdit from './components/GjTableEdit'
+  import store from '@/store'
   export default {
     name: 'ComprehensiveTable',
     components: {
-      TableEdit,
+      JzTableEditOld,
+      JzTableAddOld,
     },
     filters: {
       statusFilter(status) {
         const statusMap = {
-          published: 'success',
-          draft: 'gray',
-          deleted: 'danger',
+          1: 'success',
+          0: 'danger',
+          //deleted: 'danger',
+        }
+        return statusMap[status]
+      },
+      statusForm(status) {
+        const statusMap = {
+          1: '已记账',
+          0: 'POS未记账',
+          2: '贷款未记账',
+          //deleted: 'danger',
         }
         return statusMap[status]
       },
@@ -153,8 +363,57 @@
         queryForm: {
           pageNo: 1,
           pageSize: 20,
-          title: '',
+          payeracc: '',
+          payername: '',
+          agent: '',
+          contractno: '',
+          recordno: '',
+          ckr: '',
+          price: '',
+          orgid: '',
+          orgname: '',
+          startdate: '',
+          enddate: '',
+          isjz: '',
+          flag: '',
         },
+        options: [
+          {
+            value: '3',
+            label: '全部',
+          },
+          {
+            value: '0',
+            label: 'POS未记账',
+          },
+          {
+            value: '2',
+            label: '贷款未记账',
+          },
+          {
+            value: '1',
+            label: '已记账',
+          },
+        ],
+        options_zjxz: [
+          {
+            value: '1',
+            label: '全部',
+          },
+          {
+            value: '2',
+            label: '专用POS',
+          },
+          {
+            value: '0',
+            label: '银行贷款',
+          },
+        ],
+        date: [],
+        orgidlist: [],
+        accinfolist: [],
+        accinfo: { jgaccount: '', jgname: '', contractno: '' },
+        timeout: '',
       }
     },
     computed: {
@@ -166,7 +425,9 @@
       this.fetchData()
     },
     beforeDestroy() {},
-    mounted() {},
+    mounted() {
+      //this.fetchData()
+    },
     methods: {
       tableSortChange() {
         const imageList = []
@@ -179,10 +440,10 @@
         this.selectRows = val
       },
       handleAdd() {
-        this.$refs['edit'].showEdit()
+        this.$refs['edit-add'].showEdit()
       },
       handleEdit(row) {
-        this.$refs['edit'].showEdit(row)
+        this.$refs['edit-show'].showEdit(row)
       },
       handleDelete(row) {
         if (row.id) {
@@ -219,17 +480,89 @@
       },
       async fetchData() {
         this.listLoading = true
-        const { data, totalCount } = await getList(this.queryForm)
-        this.list = data
-        const imageList = []
-        data.forEach((item, index) => {
-          imageList.push(item.img)
-        })
-        this.imageList = imageList
-        this.total = totalCount
-        setTimeout(() => {
-          this.listLoading = false
-        }, 500)
+        /* console.log('payeracc is' + this.queryForm.payeracc)
+        console.log('payeracc is' + this.queryForm.contractno)
+        console.log('payeracc is' + this.queryForm.startdate)
+        console.log('payeracc is' + this.queryForm.enddate)
+        console.log('payeracc is' + this.queryForm.payername)
+        console.log('payeracc is' + this.queryForm.orgid)*/
+        if (
+          this.queryForm.payeracc === '' &&
+          this.queryForm.contractno === '' &&
+          this.queryForm.startdate === '' &&
+          this.queryForm.enddate === '' &&
+          this.queryForm.payername === '' &&
+          this.queryForm.orgid === '' &&
+          this.queryForm.ckr === '' &&
+          this.queryForm.recordno === '' &&
+          this.queryForm.flag === '' &&
+          this.queryForm.price === '' &&
+          (this.queryForm.isjz === '' || this.queryForm.isjz === '3')
+        ) {
+          const { data, totalCount, code, orgidlist } = await GetJzinfoList(
+            store.getters['user/username'],
+            this.queryForm.pageNo,
+            this.queryForm.pageSize
+          )
+          //console.log('date is:' + date)
+          //console.log('usernamesss is:' + store.getters['user/username'])
+
+          if (code !== '200') {
+            this.list = null
+          } else {
+            this.list = data
+            this.orgidlist = orgidlist
+          }
+          //console.log(data)
+          const imageList = []
+          data.forEach((item, index) => {
+            imageList.push(item.img)
+          })
+          this.imageList = imageList
+          this.total = totalCount
+          //console.log('list is :' + data)
+          setTimeout(() => {
+            this.listLoading = false
+            //this.listLoading.close()
+          }, 500)
+        } else {
+          try {
+            const { data, totalCount, code } = await GetJzinfoListByChoose(
+              store.getters['user/username'],
+              this.queryForm.payername,
+              this.queryForm.payeracc,
+              this.queryForm.contractno,
+              this.queryForm.recordno,
+              this.queryForm.ckr,
+              this.queryForm.price,
+              this.queryForm.flag,
+              this.queryForm.startdate,
+              this.queryForm.enddate,
+              this.queryForm.isjz,
+              this.queryForm.orgid,
+              this.queryForm.pageNo,
+              this.queryForm.pageSize
+            )
+            if (code === '200') {
+              this.list = data
+              const imageList = []
+              data.forEach((item, index) => {
+                imageList.push(item.img)
+              })
+              this.imageList = imageList
+              this.total = totalCount
+              //console.log('list is :' + data)
+              setTimeout(() => {
+                this.listLoading = false
+                //this.listLoading.close()
+              }, 500)
+            }
+          } catch (e) {
+            this.list = null
+            this.listLoading = false
+          }
+          //console.log(data)
+        }
       },
       testMessage() {
         this.$baseMessage('test1', 'success')
@@ -257,6 +590,127 @@
       },
       testNotify() {
         this.$baseNotify('测试消息提示', 'test', 'success', 'bottom-right')
+      },
+      createStateFilterByJgname(queryString) {
+        return (list) => {
+          return list.jgname.indexOf(queryString) >= 0
+        }
+      },
+
+      createStateFilterByContractno(queryString) {
+        return (list) => {
+          return list.contractno.indexOf(queryString) >= 0
+        }
+      },
+      createStateFilterByJgAccount(queryString) {
+        return (list) => {
+          return list.jgaccount.indexOf(queryString) >= 0
+        }
+      },
+      querySearchByJgAcc(queryString, callback) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.jgaccount
+              })
+              let jgaccounts = (this.accinfolist = retdata)
+              let results = queryString
+                ? jgaccounts.filter(
+                    this.createStateFilterByJgAccount(queryString)
+                  )
+                : jgaccounts
+              results = this.arrayReuse(results)
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      },
+      querySearchByContractno(queryString, callback) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.contractno
+              })
+              let contractnos = (this.accinfolist = retdata)
+              let results = queryString
+                ? contractnos.filter(
+                    this.createStateFilterByContractno(queryString)
+                  )
+                : contractnos
+              results = this.arrayReuse(results)
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      },
+      querySearchByJgName(queryString, callback) {
+        GetAccInfoList(store.getters['user/username'])
+          .then((res) => {
+            let retdata = res.data
+            if (res.code === '200') {
+              retdata.forEach((item, index) => {
+                item.value = item.jgname
+              })
+              let jgnames = (this.accinfolist = retdata)
+              let results = queryString
+                ? jgnames.filter(this.createStateFilterByJgname(queryString))
+                : jgnames
+              results = this.arrayReuse(results)
+              clearTimeout(this.timeout)
+              this.timeout = setTimeout(() => {
+                callback(results)
+              }, 100 * Math.random())
+            } else {
+              this.$message({
+                type: 'error',
+                message: res.data.code,
+              })
+            }
+          })
+          .catch((err) => {
+            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
+          })
+      },
+      selectHandleByJgname(item) {
+        this.queryForm.payername = item.jgname
+      },
+      selectHandleByJgAccount(item) {
+        this.queryForm.payeracc = item.jgaccount
+      },
+      selectHandleByContractno(item) {
+        this.queryForm.contractno = item.contractno
+      },
+      arrayReuse(arr) {
+        const res = new Map()
+        return arr.filter((arr) => !res.has(arr.value) && res.set(arr.value, 1))
+      },
+      getdatepicker() {
+        this.queryForm.startdate = this.date ? this.date[0] : ''
+        this.queryForm.enddate = this.date ? this.date[1] : ''
       },
     },
   }

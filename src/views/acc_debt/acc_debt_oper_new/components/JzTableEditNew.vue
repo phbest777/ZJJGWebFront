@@ -12,26 +12,32 @@
       width="500px"
       label-width="150px"
     >
-      <el-form-item label="资金监管户名:" prop="payername">
+      <el-form-item label="资金监管户名:" prop="jgname">
         <el-input
-          v-model.trim="form.payername"
+          v-model.trim="form.jgname"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
-      <el-form-item label="资金监管账号:" prop="payeracc">
+      <el-form-item label="资金监管账号:" prop="jgaccount">
         <el-input
-          v-model.trim="form.payeracc"
+          v-model.trim="form.jgaccount"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
-      <el-form-item label="协议编号:" prop="contractno">
+      <el-form-item label="协议编号:" prop="xybh">
         <el-input
-          v-model.trim="form.contractno"
+          v-model.trim="form.xybh"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
+      </el-form-item>
+      <el-form-item label="合同号:" prop="recordno">
+        <el-input v-model.trim="form.recordno" autocomplete="off"></el-input>
+      </el-form-item>
+      <el-form-item label="存款人:" prop="ckr">
+        <el-input v-model.trim="form.ckr" autocomplete="off"></el-input>
       </el-form-item>
       <el-form-item label="机构号:" prop="orgid">
         <el-input
@@ -47,30 +53,23 @@
           :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
-      <el-form-item label="存款金额:" prop="amt">
+      <el-form-item label="记账金额:" prop="price">
         <el-input
-          v-model.trim="form.amt"
+          v-model.trim="form.price"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
-      <el-form-item label="交易流水号:" prop="hxlsh">
+      <el-form-item label="交易流水号:" prop="cklsh">
         <el-input
-          v-model.trim="form.hxlsh"
+          v-model.trim="form.cklsh"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
       </el-form-item>
-      <el-form-item label="交易日期:" prop="datadate">
+      <el-form-item label="交易日期:" prop="transdate">
         <el-input
-          v-model.trim="form.datadate"
-          autocomplete="off"
-          :disabled="!inputEditable"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="交易时间:" prop="datatime">
-        <el-input
-          v-model.trim="form.datatime"
+          v-model.trim="form.transdate"
           autocomplete="off"
           :disabled="!inputEditable"
         ></el-input>
@@ -92,58 +91,64 @@
     </el-form>
     <div slot="footer" class="dialog-footer">
       <el-button @click="close">取 消</el-button>
-      <el-button type="primary" @click="submitGjInfo">确 定</el-button>
+      <el-button type="primary" @click="submitJzInfo">确 定</el-button>
     </div>
   </el-dialog>
 </template>
 
 <script>
   import { doEdit } from '@/api/table'
-  import { AddGjInfoByDetail } from '@/api/gjinfo'
   import store from '@/store'
+  import { AddJzInfoNewByDetail } from '@/api/jzinfo'
 
   export default {
-    name: 'TableEdit',
+    name: 'JzTableEditOld',
     data() {
       return {
         form: {
           username: '',
-          payername: '',
-          payeracc: '',
+          jgname: '',
+          jgaccount: '',
+          xybh: '',
+          recordno: '',
+          ckr: '',
+          operator: '',
+          flag: '',
+          cklb: '',
+          cklsh: '',
           orgid: '',
           orgname: '',
-          contractno: '',
-          amt: '',
-          hxlsh: '',
-          datadate: '',
-          datatime: '',
+          price: '',
+          zjxz: '',
+          transdate: '',
           submitdate: '',
           submittime: '',
           addmode: '',
         },
         rules: {
-          payername: [
+          jgname: [
             { required: true, trigger: 'blur', message: '请输入资金监管户名' },
           ],
-          payeracc: [
+          jgaccount: [
             { required: true, trigger: 'blur', message: '请输入资金监管账号' },
           ],
-          contractno: [
+          xybh: [
             { required: true, trigger: 'blur', message: '请输入协议编号' },
           ],
+          recordno: [
+            { required: true, trigger: 'blur', message: '请输入合同编号' },
+          ],
+          ckr: [{ required: true, trigger: 'blur', message: '请输入存款人' }],
           orgid: [{ required: true, trigger: 'blur', message: '请输入机构号' }],
           orgname: [
             { required: true, trigger: 'blur', message: '请输入机构名称' },
           ],
           amt: [{ required: true, trigger: 'blur', message: '请输入存款金额' }],
-          hxlsh: [
+          cklsh: [
             { required: true, trigger: 'blur', message: '请输入交易流水号' },
           ],
-          datadate: [
+          transdate: [
             { required: true, trigger: 'blur', message: '请输入交易日期' },
-          ],
-          datatime: [
-            { required: true, trigger: 'blur', message: '请输入交易时间' },
           ],
           submitdate: [
             { required: true, trigger: 'blur', message: '请输入提交日期' },
@@ -167,7 +172,7 @@
           this.form.submittime = this.getTime()
         } else {
           this.inputEditable = false
-          this.title = '资金归集发送'
+          this.title = '资金记账发送'
           this.form = Object.assign({}, row)
           this.form.submitdate = this.getDate()
           this.form.submittime = this.getTime()
@@ -195,11 +200,11 @@
           }
         })
       },
-      submitGjInfo() {
+      submitJzInfo() {
         this.$refs['form'].validate(async (valid) => {
           if (valid) {
-            if (this.title === '资金归集发送') {
-              this.$confirm('你确定要执行该操作', '资金归集发送', {
+            if (this.title === '资金记账发送') {
+              this.$confirm('你确定要执行该操作', '资金记账发送', {
                 confirmButtonText: '确定',
                 cancelButtonText: '取消',
                 closeOnClickModal: false,
@@ -207,7 +212,7 @@
               })
                 .then(async () => {
                   this.form.username = store.getters['user/username']
-                  const { msg } = await AddGjInfoByDetail(this.form)
+                  const { msg } = await AddJzInfoNewByDetail(this.form)
                   this.$baseMessage(msg, 'success')
                   this.$refs['form'].resetFields()
                   this.dialogFormVisible = false
