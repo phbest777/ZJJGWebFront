@@ -165,6 +165,8 @@
               lineStyle: {
                 width: 1,
               },
+              smooth: true,
+              areaStyle: {},
             },
             {
               name: 'Volume',

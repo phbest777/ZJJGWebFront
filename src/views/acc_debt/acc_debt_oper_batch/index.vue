@@ -1,262 +1,580 @@
 <template>
-  <div class="table-container">
-    <vab-query-form>
-      <vab-query-form-left-panel>
-        <el-button icon="el-icon-plus" type="primary" @click="handleAdd">
-          添加
-        </el-button>
-        <el-button icon="el-icon-delete" type="danger" @click="handleDelete">
-          删除
-        </el-button>
-        <el-button type="primary" @click="testMessage">baseMessage</el-button>
-        <el-button type="primary" @click="testALert">baseAlert</el-button>
-        <el-button type="primary" @click="testConfirm">baseConfirm</el-button>
-        <el-button type="primary" @click="testNotify">baseNotify</el-button>
-      </vab-query-form-left-panel>
-      <vab-query-form-right-panel>
-        <el-form
-          ref="form"
-          :model="queryForm"
-          :inline="true"
-          @submit.native.prevent
-        >
-          <el-form-item>
-            <el-input v-model="queryForm.title" placeholder="标题" />
-          </el-form-item>
-          <el-form-item>
-            <el-button
-              icon="el-icon-search"
-              type="primary"
-              native-type="submit"
-              @click="handleQuery"
-            >
-              查询
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </vab-query-form-right-panel>
-    </vab-query-form>
-
-    <el-table
-      ref="tableSort"
-      v-loading="listLoading"
-      :data="list"
-      :element-loading-text="elementLoadingText"
-      :height="height"
-      @selection-change="setSelectRows"
-      @sort-change="tableSortChange"
-    >
-      <el-table-column
-        show-overflow-tooltip
-        type="selection"
-        width="55"
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="序号" width="95">
-        <template #default="scope">
-          {{ scope.$index + 1 }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        prop="title"
-        label="标题"
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="作者"
-        prop="author"
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="头像">
-        <template #default="{ row }">
-          <el-image
-            v-if="imgShow"
-            :preview-src-list="imageList"
-            :src="row.img"
-          ></el-image>
-        </template>
-      </el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="点击量"
-        prop="pageViews"
-        sortable
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="状态">
-        <template #default="{ row }">
-          <el-tooltip
-            :content="row.status"
-            class="item"
-            effect="dark"
-            placement="top-start"
-          >
-            <el-tag :type="row.status | statusFilter">
-              {{ row.status }}
-            </el-tag>
-          </el-tooltip>
-        </template>
-      </el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="时间"
-        prop="datetime"
-        width="200"
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="操作" width="180px">
-        <template #default="{ row }">
-          <el-button type="text" @click="handleEdit(row)">编辑</el-button>
-          <el-button type="text" @click="handleDelete(row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      :background="background"
-      :current-page="queryForm.pageNo"
-      :layout="layout"
-      :page-size="queryForm.pageSize"
-      :total="total"
-      @current-change="handleCurrentChange"
-      @size-change="handleSizeChange"
-    ></el-pagination>
-    <table-edit ref="edit"></table-edit>
-  </div>
+  <div
+    id="mychart"
+    className="Echarts"
+    style="width: 100%; height: 500px"
+  ></div>
 </template>
 
 <script>
-  import { getList, doDelete } from '@/api/table'
-  import TableEdit from './components/TableEdit'
+  import * as echarts from 'echarts/lib/echarts'
+  import klineData from './data/test1.json'
+
   export default {
-    name: 'ComprehensiveTable',
-    components: {
-      TableEdit,
-    },
-    filters: {
-      statusFilter(status) {
-        const statusMap = {
-          published: 'success',
-          draft: 'gray',
-          deleted: 'danger',
-        }
-        return statusMap[status]
-      },
-    },
     data() {
       return {
-        imgShow: true,
-        list: [],
-        imageList: [],
-        listLoading: true,
-        layout: 'total, sizes, prev, pager, next, jumper',
-        total: 0,
-        background: true,
-        selectRows: '',
-        elementLoadingText: '正在加载...',
-        queryForm: {
-          pageNo: 1,
-          pageSize: 20,
-          title: '',
-        },
+        gridData1: [],
+        gridData2: [],
+        gridData3: [],
+        gridData4: [],
+        //upcolor: '#FF0000', //增长颜色
+        //upBorderColor: '#8A0000',
+        //downColor: '#008000', // 下跌颜色
+        //downBorderColor: '#008F28',
+        volumeColor1: [],
+        volumeColor2: [],
+        UP_COLOR: '#E24528',
+        DOWN_COLOR: '#009933',
+        NORMAL_COLOR: '#33353C',
+        priceMax: 0.0,
+        priceMin: 0.0,
+        priceInterval: 0.0,
+        volumeMax: 0,
+        volumeMin: 0,
+        volumeInterval: 0,
+        klineData: [], //k线图数据
+        hourData: [], //charts表格小时数据
+        xData: [],
+        culomnColor: [], //颜色
+        culomnValue: [],
+        lastPrice: 0.0,
       }
     },
-    computed: {
-      height() {
-        return this.$baseTableHeight()
-      },
+    mounted() {
+      // 数据初始化
+      this.initData()
+      // 图标初始化
+      this.initEcharts()
     },
-    created() {
-      this.fetchData()
-    },
-    beforeDestroy() {},
-    mounted() {},
     methods: {
-      tableSortChange() {
-        const imageList = []
-        this.$refs.tableSort.tableData.forEach((item, index) => {
-          imageList.push(item.img)
-        })
-        this.imageList = imageList
-      },
-      setSelectRows(val) {
-        this.selectRows = val
-      },
-      handleAdd() {
-        this.$refs['edit'].showEdit()
-      },
-      handleEdit(row) {
-        this.$refs['edit'].showEdit(row)
-      },
-      handleDelete(row) {
-        if (row.id) {
-          this.$baseConfirm('你确定要删除当前项吗', null, async () => {
-            const { msg } = await doDelete({ ids: row.id })
-            this.$baseMessage(msg, 'success')
-            this.fetchData()
-          })
-        } else {
-          if (this.selectRows.length > 0) {
-            const ids = this.selectRows.map((item) => item.id).join()
-            this.$baseConfirm('你确定要删除选中项吗', null, async () => {
-              const { msg } = await doDelete({ ids: ids })
-              this.$baseMessage(msg, 'success')
-              this.fetchData()
-            })
+      initData() {
+        this.klineData = klineData
+        let jsonData = klineData
+        this.lastPrice = jsonData[0][6]
+        //console.log('jsonData is:' + jsonData)
+        //console.log('lastprice is:' + this.lastPrice)
+        for (let i = 0; i < jsonData.length; i++) {
+          /*hourData.push([
+            i,
+            jsonData[i][2],
+            jsonData[i][7],
+            jsonData[i][3],
+            jsonData[i][7],
+            jsonData[i][3],
+            jsonData[i][8],
+          ])*/
+          if (i < 121) {
+            //上午数据
+            if (jsonData[i][4] > this.priceMax) {
+              this.priceMax = jsonData[i][4]
+            }
+            if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
+              this.priceMin = jsonData[i][5]
+            }
+            this.gridData1.push(jsonData[i][14], jsonData[i][3])
+            if (jsonData[i][10] > this.volumeMax) {
+              this.volumeMax = jsonData[i][10]
+            }
+            if (jsonData[i][10] < this.volumeMin || this.volumeMin === 0) {
+              this.volumeMin = jsonData[i][10]
+            }
+            if (i === 0) {
+              if (jsonData[i][3] >= jsonData[i][6]) {
+                this.volumeColor1.push(this.UP_COLOR)
+              } else {
+                this.volumeColor1.push(this.DOWN_COLOR)
+              }
+            } else {
+              if (jsonData[i][3] >= jsonData[i - 1][3]) {
+                this.volumeColor1.push(this.UP_COLOR)
+              } else {
+                this.volumeColor1.push(this.DOWN_COLOR)
+              }
+            }
+            this.gridData2.push(jsonData[i][14], jsonData[i][10])
           } else {
-            this.$baseMessage('未选中任何行', 'error')
-            return false
+            //下午数据
+            if (jsonData[i][4] > this.priceMax) {
+              this.priceMax = jsonData[i][4]
+            }
+            if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
+              this.priceMin = jsonData[i][5]
+            }
+            this.gridData3.push(jsonData[i][14], jsonData[i][3])
+            if (jsonData[i][10] > this.volumeMax) {
+              this.volumeMax = jsonData[i][10]
+            }
+            if (jsonData[i][10] < this.volumeMin || this.volumeMin === 0) {
+              this.volumeMin = jsonData[i][10]
+            }
+            if (jsonData[i][3] >= jsonData[i - 1][3]) {
+              this.volumeColor1.push(this.UP_COLOR)
+            } else {
+              this.volumeColor1.push(this.DOWN_COLOR)
+            }
+            this.gridData4.push(jsonData[i][14], jsonData[i][10])
           }
         }
+        console.log('grid1 data is:' + this.gridData1)
+        console.log('grid2 data is:' + this.gridData2)
+        console.log('grid3 data is:' + this.gridData3)
+        console.log('grid4 data is:' + this.gridData4)
+
+        if (
+          (this.lastPrice - this.priceMax) * -1 >
+          this.lastPrice - this.priceMin
+        ) {
+          this.priceMin = this.lastPrice - (this.lastPrice - this.priceMax) * -1
+        } else {
+          this.priceMax = this.lastPrice + (this.lastPrice - this.priceMin)
+        }
+
+        this.priceInterval = (this.priceMax - this.lastPrice) / 4
+        this.volumeInterval = this.volumeMax / 2
+        //this.hourData = this.splitData(this.klineData)
+        //this.hourData = this.klineData
+        //this.initxData()
+        //this.initEcharts()
       },
-      handleSizeChange(val) {
-        this.queryForm.pageSize = val
-        this.fetchData()
-      },
-      handleCurrentChange(val) {
-        this.queryForm.pageNo = val
-        this.fetchData()
-      },
-      handleQuery() {
-        this.queryForm.pageNo = 1
-        this.fetchData()
-      },
-      async fetchData() {
-        this.listLoading = true
-        const { data, totalCount } = await getList(this.queryForm)
-        this.list = data
-        const imageList = []
-        data.forEach((item, index) => {
-          imageList.push(item.img)
+      initEcharts() {
+        const option = {
+          grid: [
+            // 第一个grid
+            {
+              top: 10, // 图表的外边距
+              height: 200, // 图表的高度
+              left: '0',
+              width: '50%', //因为是左右各一个图表，使用百分比的方式显得更方便，
+            },
+            // 第二个grid，第二个图表是在第一个图表的下方，所以要把它定位到底部
+            {
+              top: 240, //设置上方的外边距是第一个图表的高度再加10，使用top是方便我们调整下方grid的高度
+              left: '0',
+              width: '50%', // 宽度与第一个图表一个大
+              height: 100,
+            },
+            // 第三个grid，第三个图表是在第一个图表的右方，所以要把它定位到右方
+            {
+              top: 10, // 图表的外边距
+              left: '50%', //设置右边图表的左边距是第一个图表的大小，达到定位右边的效果
+              width: '50%', // 宽度与第一个图表一个大
+              height: 200,
+            },
+            // 第四个grid，第四个图表是在第三个图表的下方，所以要把它定位到底部
+            {
+              top: 240, //设置上方的外边距是第三个图表的高度再加10，使用top是方便我们调整下方grid的高度
+              left: '50%', //设置右边图表的左边距是第三个图表的大小，达到定位右边的效果
+              width: '50%', // 宽度与第一个图表一个大
+              height: 100,
+            },
+          ],
+          // 多个图表则会存在对个x轴y轴，所以这里的配置我们也换成数组的方式
+          // x轴配置，
+          xAxis: [
+            // 第一个grid的x轴属性
+            {
+              // 告诉echarts，这个第一个grid的x轴
+              gridIndex: 0,
+              // 坐标轴是否留白
+              boundaryGap: false,
+              // x轴的刻度
+              axisTick: { show: false },
+              // x轴的刻度值
+              axisLabel: { show: false },
+              max: 'dataMax',
+              min: 'dataMin',
+              type: 'time',
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+            },
+            // 第二个grid的x轴属性
+            {
+              // 告诉echarts，这个第一个grid的x轴
+              gridIndex: 1,
+              // 坐标轴是否留白
+              boundaryGap: false,
+              // x轴的刻度
+              axisTick: { show: false },
+              max: 'dataMax',
+              min: 'dataMin',
+              type: 'time',
+              axisLabel: {
+                fontSize: 12,
+                show: true,
+                color: '#888',
+                formatter: (value) => {
+                  //var a = echarts.format.formatTime('hh:mm', value)
+                  let a = echarts.time.format('hh:mm', value)
+                  console.log('time value is:' + value)
+                  if (a === '11:30') {
+                    return ''
+                  }
+                  if (a === '09:00') {
+                    return '        09:00'
+                  }
+                  return a
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+            },
+            // 第三个grid的x轴属性
+            {
+              // 告诉echarts，这个第一个grid的x轴
+              gridIndex: 2,
+              // 坐标轴是否留白
+              boundaryGap: false,
+              // x轴的刻度
+              axisTick: { show: false },
+              // x轴的刻度值
+              axisLabel: { show: false },
+              type: 'time',
+              max: 'dataMax',
+              min: 'dataMin',
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+            },
+            // 第四个grid的x轴属性
+            {
+              // 告诉echarts，这个第一个grid的x轴
+              gridIndex: 3,
+              // 坐标轴是否留白
+              boundaryGap: false,
+              // x轴的刻度
+              axisTick: { show: false },
+              type: 'time',
+              max: 'dataMax',
+              min: 'dataMin',
+              axisLabel: {
+                fontSize: 12,
+                show: true,
+                showMinLabel: false,
+                color: '#888',
+                formatter: (value) => {
+                  //var a = echarts.format.formatTime('hh:mm', value)
+                  let a = echarts.time.format('hh:mm', value)
+                  console('value is' + value)
+                  if (a === '13:00') {
+                    return '11:30/13:00'
+                  }
+                  if (a === '15:00') {
+                    return '15:00        '
+                  }
+                  return a
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+            },
+          ],
+          // y轴配置
+          yAxis: [
+            // 第一个grid的y轴属性
+            {
+              // 去掉刻度值旁边的指示线
+              axisTick: { show: false },
+              splitNumber: 9,
+              gridIndex: 0,
+              interval: this.priceInterval,
+              max: this.priceMax,
+              min: this.priceMin,
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              axisLabel: {
+                fontSize: 10,
+                margin: 0,
+                // y轴的数值向内显示
+                align: 'left',
+                formatter: (value, index) => {
+                  return value.toFixed(2)
+                },
+                color: (value, index) => {
+                  // 中间基准线的数值为黑色
+                  if (parseFloat(value).toFixed(2) === this.klineData[0][3]) {
+                    return this.NORMAL_COLOR
+                  }
+
+                  // 上涨区域的数字为红色
+                  if (value > this.klineData[0][3]) {
+                    return '#E24528'
+                  }
+
+                  // 下方下跌的数值为绿色
+                  if (value < this.klineData[0][3]) {
+                    return '#009933'
+                  }
+                },
+              },
+            },
+            // 第二个grid的y轴属性
+            {
+              // 去掉刻度值旁边的指示线
+              axisTick: { show: false },
+              splitNumber: 3,
+              gridIndex: 1,
+              interval: this.volumeInterval,
+              max: this.volumeMax,
+              min: 0,
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              axisLabel: {
+                //设置显示坐标轴的数值为不显示
+                show: false,
+              },
+            },
+            // 第三个grid的y轴属性
+            {
+              // 去掉刻度值旁边的指示线
+              axisTick: { show: false },
+              splitNumber: 9,
+              position: 'right',
+              gridIndex: 2,
+              interval: this.priceInterval,
+              max: this.priceMax,
+              min: this.priceMin,
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+              axisLabel: {
+                fontSize: 10,
+                margin: 0,
+                // y轴的数值向内显示
+                align: 'right',
+                formatter: (value, index) => {
+                  var persent =
+                    (value - this.klineData[0][3]) / this.klineData[0][3]
+                  persent = persent < 0 ? persent * -1 : persent
+                  persent = persent * 100
+
+                  return persent.toFixed(2) + '%'
+                },
+                color: (value, index) => {
+                  // 中间基准线的数值为黑色
+                  if (parseFloat(value).toFixed(2) === this.klineData[0][3]) {
+                    return '#33353C'
+                  }
+
+                  // 上涨区域的数字为红色
+                  if (value > this.klineData[0][3]) {
+                    return '#E24528'
+                  }
+
+                  // 下方下跌的数值为绿色
+                  if (value < this.klineData[0][3]) {
+                    return '#009933'
+                  }
+                },
+              },
+            },
+            // 第四个grid的y轴属性
+            {
+              // 去掉刻度值旁边的指示线
+              axisTick: { show: false },
+              splitNumber: 3,
+              position: 'right',
+              gridIndex: 3,
+              interval: this.volumeInterval,
+              max: this.volumeMax,
+              min: 0,
+              axisLabel: {
+                //设置显示坐标轴的数值为不显示
+                show: false,
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                },
+              },
+            },
+          ],
+          // 数据可以通过xAxisIndex，yAxisIndex属性，来指定是哪个grid的数据
+          series: [
+            // 第一个图表的数据
+            {
+              // 平滑曲线
+              smooth: true,
+              // 是否显示折线上的圆点
+              symbol: 'none',
+              // 线条颜色
+              lineStyle: {
+                color: '#0481F8',
+                width: 1,
+              },
+              xAxisIndex: 0,
+              yAxisIndex: 0,
+              data: this.gridData1,
+              type: 'line',
+            },
+            // 第二个图表的数据
+            {
+              xAxisIndex: 1,
+              yAxisIndex: 1,
+              // 柱状图柱子宽度
+              barWidth: 1,
+              data: this.gridData2,
+              type: 'bar',
+              // 设置柱状图颜色
+              itemStyle: {
+                normal: {
+                  color: (params) => {
+                    return this.volumeColor1[params.dataIndex]
+                  },
+                },
+              },
+            },
+            // 第三个图表的数据
+            {
+              // 平滑曲线
+              smooth: true,
+              // 是否显示折线上的圆点
+              symbol: 'none',
+              // 线条颜色
+              lineStyle: {
+                color: '#0481F8',
+                width: 1,
+              },
+              xAxisIndex: 2,
+              yAxisIndex: 2,
+              data: this.gridData3,
+              type: 'line',
+            },
+            // 第四个图表的数据
+            {
+              xAxisIndex: 3,
+              yAxisIndex: 3,
+              // 柱状图柱子宽度
+              barWidth: 1,
+              data: this.gridData4,
+              type: 'bar',
+              // 设置柱状图颜色
+              itemStyle: {
+                normal: {
+                  color: (params) => {
+                    return this.volumeColor2[params.dataIndex]
+                  },
+                },
+              },
+            },
+          ],
+        }
+        const myChart = echarts.init(document.getElementById('mychart'))
+        myChart.setOption(option)
+        //随着屏幕大小调节图表
+        window.addEventListener('resize', () => {
+          myChart.resize()
         })
-        this.imageList = imageList
-        this.total = totalCount
-        setTimeout(() => {
-          this.listLoading = false
-        }, 500)
       },
-      testMessage() {
-        this.$baseMessage('test1', 'success')
+      // 横坐标数据处理
+      initxData() {
+        for (let i = 0; i < this.klineData.length; i++) {
+          this.xData[i] = this.klineData[i][8]
+          //console.log('klineData Row is:' + this.klineData[i][1])
+        }
+        this.initCulomnColor()
       },
-      testALert() {
-        this.$baseAlert('11')
-        this.$baseAlert('11', '自定义标题', () => {
-          /* 可以写回调; */
-        })
-        this.$baseAlert('11', null, () => {
-          /* 可以写回调; */
-        })
+      // 初始化交易数据和交易柱状图颜色参数
+      initCulomnColor() {
+        this.culomnColor[0] = this.klineData[0][7] > 0 ? 1 : -1
+        this.culomnValue[0] = [0, this.klineData[0][3], -1]
+        for (let i = 1; i < this.klineData.length; i++) {
+          this.culomnColor[i] =
+            this.klineData[i][2] > this.klineData[i - 1][2] ? 1 : -1
+          this.culomnValue[i] = [i, this.klineData[i][3], this.culomnColor[i]]
+        }
       },
-      testConfirm() {
-        this.$baseConfirm(
-          '你确定要执行该操作?',
-          null,
-          () => {
-            /* 可以写回调; */
-          },
-          () => {
-            /* 可以写回调; */
-          }
-        )
-      },
-      testNotify() {
-        this.$baseNotify('测试消息提示', 'test', 'success', 'bottom-right')
+      // 数据计算以及拆分，将json数据转为数组数据
+      splitData(jsonData) {
+        /*console.log('kinlinedata is:' + jsonData)
+        const hourData = []
+        for (let i = 0; i < jsonData.length; i++) {
+          hourData.push([
+            i,
+            jsonData[i][2],
+            jsonData[i][7],
+            jsonData[i][3],
+            jsonData[i][7],
+            jsonData[i][3],
+            jsonData[i][8],
+          ])
+        }
+        console.log('hourData is :' + hourData)
+        return hourData*/
       },
     },
   }
