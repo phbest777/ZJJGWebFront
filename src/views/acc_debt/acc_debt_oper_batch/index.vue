@@ -71,7 +71,7 @@
             if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
               this.priceMin = jsonData[i][5]
             }
-            this.gridData1.push(jsonData[i][14], jsonData[i][3])
+            this.gridData1.push(jsonData[i][22], jsonData[i][3])
             if (jsonData[i][10] > this.volumeMax) {
               this.volumeMax = jsonData[i][10]
             }
@@ -91,7 +91,7 @@
                 this.volumeColor1.push(this.DOWN_COLOR)
               }
             }
-            this.gridData2.push(jsonData[i][14], jsonData[i][10])
+            this.gridData2.push(jsonData[i][22], jsonData[i][10])
           } else {
             //下午数据
             if (jsonData[i][4] > this.priceMax) {
@@ -100,7 +100,7 @@
             if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
               this.priceMin = jsonData[i][5]
             }
-            this.gridData3.push(jsonData[i][14], jsonData[i][3])
+            this.gridData3.push(jsonData[i][22], jsonData[i][3])
             if (jsonData[i][10] > this.volumeMax) {
               this.volumeMax = jsonData[i][10]
             }
@@ -112,7 +112,7 @@
             } else {
               this.volumeColor1.push(this.DOWN_COLOR)
             }
-            this.gridData4.push(jsonData[i][14], jsonData[i][10])
+            this.gridData4.push(jsonData[i][22], jsonData[i][10])
           }
         }
         console.log('grid1 data is:' + this.gridData1)
@@ -213,8 +213,9 @@
                 show: true,
                 color: '#888',
                 formatter: (value) => {
-                  //var a = echarts.format.formatTime('hh:mm', value)
-                  let a = echarts.time.format('hh:mm', value)
+                  let a = echarts.format.formatTime('hh:mm', value)
+                  //let a = echarts.time.format(value, 'hh:mm')
+                  //let a = value
                   console.log('time value is:' + value)
                   if (a === '11:30') {
                     return ''
@@ -281,9 +282,10 @@
                 showMinLabel: false,
                 color: '#888',
                 formatter: (value) => {
-                  //var a = echarts.format.formatTime('hh:mm', value)
-                  let a = echarts.time.format('hh:mm', value)
-                  console('value is' + value)
+                  let a = echarts.format.formatTime('hh:mm', value)
+                  //let a = echarts.time.format(value, 'hh:mm')
+                  //let a = value
+                  console.log('value is' + value)
                   if (a === '13:00') {
                     return '11:30/13:00'
                   }
@@ -336,22 +338,22 @@
                 // y轴的数值向内显示
                 align: 'left',
                 formatter: (value, index) => {
-                  return value.toFixed(2)
+                  return value.toFixed(0)
                 },
                 color: (value, index) => {
                   // 中间基准线的数值为黑色
-                  if (parseFloat(value).toFixed(2) === this.klineData[0][3]) {
+                  if (parseFloat(value).toFixed(0) === this.lastPrice) {
                     return this.NORMAL_COLOR
                   }
 
                   // 上涨区域的数字为红色
-                  if (value > this.klineData[0][3]) {
-                    return '#E24528'
+                  if (value > this.lastPrice) {
+                    return this.UP_COLOR
                   }
 
                   // 下方下跌的数值为绿色
                   if (value < this.klineData[0][3]) {
-                    return '#009933'
+                    return this.DOWN_COLOR
                   }
                 },
               },
@@ -410,7 +412,7 @@
                 // y轴的数值向内显示
                 align: 'right',
                 formatter: (value, index) => {
-                  var persent =
+                  let persent =
                     (value - this.klineData[0][3]) / this.klineData[0][3]
                   persent = persent < 0 ? persent * -1 : persent
                   persent = persent * 100
@@ -536,9 +538,9 @@
         const myChart = echarts.init(document.getElementById('mychart'))
         myChart.setOption(option)
         //随着屏幕大小调节图表
-        window.addEventListener('resize', () => {
-          myChart.resize()
-        })
+        //window.addEventListener('resize', () => {
+        // myChart.resize()
+        //})
       },
       // 横坐标数据处理
       initxData() {
