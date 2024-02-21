@@ -9,7 +9,7 @@
     <footer v-show="footerCopyright" class="footer-copyright">
       Copyright
       <vab-icon :icon="['fas', 'copyright']"></vab-icon>
-      徐州分行信息科技部 {{ fullYear }}
+      PHBEST {{ fullYear }}
     </footer>
   </div>
 </template>

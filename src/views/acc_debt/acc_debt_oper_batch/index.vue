@@ -13,10 +13,10 @@
   export default {
     data() {
       return {
-        gridData1: [],
-        gridData2: [],
-        gridData3: [],
-        gridData4: [],
+        gridData1: [[,]],
+        gridData2: [[,]],
+        gridData3: [[,]],
+        gridData4: [[,]],
         //upcolor: '#FF0000', //增长颜色
         //upBorderColor: '#8A0000',
         //downColor: '#008000', // 下跌颜色
@@ -38,6 +38,129 @@
         culomnColor: [], //颜色
         culomnValue: [],
         lastPrice: 0.0,
+        gridtest: [
+          [1702948220, 2638],
+          [1702948259, 2640],
+          [1702948320, 2640],
+          [1702948379, 2639],
+          [1702948439, 2632],
+          [1702948507, 2638],
+          [1702948559, 2638],
+          [1702948619, 2638],
+          [1702948679, 2637],
+          [1702948740, 2637],
+          [1702948802, 2637],
+          [1702948867, 2636],
+          [1702948919, 2635],
+          [1702948983, 2633],
+          [1702949041, 2634],
+          [1702949099, 2633],
+          [1702949166, 2635],
+          [1702949252, 2635],
+          [1702949282, 2633],
+          [1702949339, 2635],
+          [1702949399, 2633],
+          [1702949463, 2636],
+          [1702949520, 2635],
+          [1702949580, 2634],
+          [1702949639, 2632],
+          [1702949701, 2637],
+          [1702949761, 2639],
+          [1702949821, 2641],
+          [1702949882, 2642],
+          [1702949940, 2643],
+          [1702949999, 2645],
+          [1702950061, 2642],
+          [1702950123, 2642],
+          [1702950179, 2640],
+          [1702950243, 2641],
+          [1702950303, 2641],
+          [1702950364, 2643],
+          [1702950420, 2644],
+          [1702950494, 2644],
+          [1702950543, 2644],
+          [1702950599, 2643],
+          [1702950660, 2641],
+          [1702950748, 2642],
+          [1702950782, 2643],
+          [1702950841, 2644],
+          [1702950904, 2643],
+          [1702950959, 2644],
+          [1702951029, 2644],
+          [1702951092, 2642],
+          [1702951140, 2643],
+          [1702951206, 2643],
+          [1702951270, 2643],
+          [1702951319, 2644],
+          [1702951379, 2647],
+          [1702951440, 2648],
+          [1702951501, 2649],
+          [1702951559, 2651],
+          [1702951624, 2650],
+          [1702951679, 2642],
+          [1702951746, 2644],
+          [1702951805, 2643],
+          [1702951866, 2643],
+          [1702951920, 2644],
+          [1702951979, 2643],
+          [1702952042, 2646],
+          [1702952102, 2643],
+          [1702953002, 2643],
+          [1702953059, 2650],
+          [1702953120, 2648],
+          [1702953182, 2645],
+          [1702953246, 2645],
+          [1702953299, 2646],
+          [1702953361, 2645],
+          [1702953431, 2641],
+          [1702953479, 2641],
+          [1702953544, 2644],
+          [1702953606, 2641],
+          [1702953673, 2641],
+          [1702953724, 2641],
+          [1702953779, 2643],
+          [1702953839, 2641],
+          [1702953903, 2642],
+          [1702953959, 2642],
+          [1702954019, 2639],
+          [1702954080, 2642],
+          [1702954140, 2640],
+          [1702954199, 2640],
+          [1702954259, 2639],
+          [1702954323, 2638],
+          [1702954380, 2638],
+          [1702954439, 2638],
+          [1702954508, 2639],
+          [1702954559, 2638],
+          [1702954620, 2633],
+          [1702954680, 2635],
+          [1702954740, 2636],
+          [1702954821, 2635],
+          [1702954864, 2636],
+          [1702954921, 2635],
+          [1702954979, 2635],
+          [1702955052, 2635],
+          [1702955099, 2635],
+          [1702955159, 2634],
+          [1702955220, 2634],
+          [1702955281, 2635],
+          [1702955340, 2631],
+          [1702955400, 2632],
+          [1702955463, 2634],
+          [1702955519, 2630],
+          [1702955579, 2629],
+          [1702955639, 2629],
+          [1702955700, 2624],
+          [1702955759, 2626],
+          [1702955824, 2629],
+          [1702955886, 2627],
+          [1702955941, 2629],
+          [1702956005, 2628],
+          [1702956060, 2632],
+          [1702956119, 2632],
+          [1702956180, 2629],
+          [1702956244, 2629],
+        ],
       }
     },
     mounted() {
@@ -47,6 +170,22 @@
       this.initEcharts()
     },
     methods: {
+      getFormatTime(stamp) {
+        let year = new Date(stamp).getFullYear()
+        let month = new Date(stamp).getMonth() + 1
+        month = month < 10 ? '0' + month : month
+        let date = new Date(stamp).getDate()
+        date = date < 10 ? '0' + date : date
+        return (
+          year +
+          '-' +
+          month +
+          '-' +
+          date +
+          ' ' +
+          new Date(stamp).toLocaleTimeString('chinese', { hour12: false })
+        )
+      },
       initData() {
         this.klineData = klineData
         let jsonData = klineData
@@ -71,7 +210,8 @@
             if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
               this.priceMin = jsonData[i][5]
             }
-            this.gridData1.push(jsonData[i][22], jsonData[i][3])
+            this.gridData1.push([jsonData[i][14], Number(jsonData[i][3])])
+
             if (jsonData[i][10] > this.volumeMax) {
               this.volumeMax = jsonData[i][10]
             }
@@ -91,7 +231,7 @@
                 this.volumeColor1.push(this.DOWN_COLOR)
               }
             }
-            this.gridData2.push(jsonData[i][22], jsonData[i][10])
+            this.gridData2.push([jsonData[i][14], Number(jsonData[i][10])])
           } else {
             //下午数据
             if (jsonData[i][4] > this.priceMax) {
@@ -100,7 +240,7 @@
             if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
               this.priceMin = jsonData[i][5]
             }
-            this.gridData3.push(jsonData[i][22], jsonData[i][3])
+            this.gridData3.push([jsonData[i][14], Number(jsonData[i][3])])
             if (jsonData[i][10] > this.volumeMax) {
               this.volumeMax = jsonData[i][10]
             }
@@ -108,13 +248,15 @@
               this.volumeMin = jsonData[i][10]
             }
             if (jsonData[i][3] >= jsonData[i - 1][3]) {
-              this.volumeColor1.push(this.UP_COLOR)
+              this.volumeColor2.push(this.UP_COLOR)
             } else {
-              this.volumeColor1.push(this.DOWN_COLOR)
+              this.volumeColor2.push(this.DOWN_COLOR)
             }
-            this.gridData4.push(jsonData[i][22], jsonData[i][10])
+            this.gridData4.push([jsonData[i][14], Number(jsonData[i][10])])
           }
         }
+        //this.gridtest.push('[' + this.gridData1 + ']')
+        //console.log('gridtest is:' + this.gridtest)
         console.log('grid1 data is:' + this.gridData1)
         console.log('grid2 data is:' + this.gridData2)
         console.log('grid3 data is:' + this.gridData3)
@@ -141,28 +283,28 @@
           grid: [
             // 第一个grid
             {
-              top: 10, // 图表的外边距
-              height: 200, // 图表的高度
+              top: 50, // 图表的外边距
+              height: 350, // 图表的高度
               left: '0',
               width: '50%', //因为是左右各一个图表，使用百分比的方式显得更方便，
             },
             // 第二个grid，第二个图表是在第一个图表的下方，所以要把它定位到底部
             {
-              top: 240, //设置上方的外边距是第一个图表的高度再加10，使用top是方便我们调整下方grid的高度
+              top: 450, //设置上方的外边距是第一个图表的高度再加10，使用top是方便我们调整下方grid的高度
               left: '0',
               width: '50%', // 宽度与第一个图表一个大
               height: 100,
             },
             // 第三个grid，第三个图表是在第一个图表的右方，所以要把它定位到右方
             {
-              top: 10, // 图表的外边距
+              top: 50, // 图表的外边距
               left: '50%', //设置右边图表的左边距是第一个图表的大小，达到定位右边的效果
               width: '50%', // 宽度与第一个图表一个大
-              height: 200,
+              height: 350,
             },
             // 第四个grid，第四个图表是在第三个图表的下方，所以要把它定位到底部
             {
-              top: 240, //设置上方的外边距是第三个图表的高度再加10，使用top是方便我们调整下方grid的高度
+              top: 450, //设置上方的外边距是第三个图表的高度再加10，使用top是方便我们调整下方grid的高度
               left: '50%', //设置右边图表的左边距是第三个图表的大小，达到定位右边的效果
               width: '50%', // 宽度与第一个图表一个大
               height: 100,
@@ -181,9 +323,9 @@
               axisTick: { show: false },
               // x轴的刻度值
               axisLabel: { show: false },
-              max: 'dataMax',
-              min: 'dataMin',
-              type: 'time',
+              //max: 'dataMax',
+              // min: 'dataMin',
+              type: 'category',
               axisLine: {
                 lineStyle: {
                   color: '#ECEEF2',
@@ -205,26 +347,37 @@
               boundaryGap: false,
               // x轴的刻度
               axisTick: { show: false },
-              max: 'dataMax',
-              min: 'dataMin',
-              type: 'time',
+              // max: '120',
+              // min: '0',
+              // splitNumber: 10,
+              type: 'category',
               axisLabel: {
+                interval: 29,
                 fontSize: 12,
                 show: true,
                 color: '#888',
-                formatter: (value) => {
-                  let a = echarts.format.formatTime('hh:mm', value)
-                  //let a = echarts.time.format(value, 'hh:mm')
+                /*formatter: (value) => {
+                  //let a = echarts.format.formatTime('hh:mm', value)
+                  let a = echarts.time.format(value, 'hh:mm')
                   //let a = value
                   console.log('time value is:' + value)
+                  console.log('a value is：' + a)
                   if (a === '11:30') {
+                    return ''
+                  }
+                  if (a >= '10:15' && a <= '10:29') {
                     return ''
                   }
                   if (a === '09:00') {
                     return '        09:00'
                   }
                   return a
-                },
+                },*/
+                /*formatter: (value, index) => {
+                  let dateTime = this.getFormatTime(value)
+                  dateTime = dateTime.substring(0, dateTime.length - 3)
+                  return dateTime.replace(' ', '\n')
+                },*/
               },
               axisLine: {
                 lineStyle: {
@@ -249,9 +402,9 @@
               axisTick: { show: false },
               // x轴的刻度值
               axisLabel: { show: false },
-              type: 'time',
-              max: 'dataMax',
-              min: 'dataMin',
+              type: 'category',
+              //max: 'dataMax',
+              //min: 'dataMin',
               axisLine: {
                 lineStyle: {
                   color: '#ECEEF2',
@@ -273,15 +426,16 @@
               boundaryGap: false,
               // x轴的刻度
               axisTick: { show: false },
-              type: 'time',
-              max: 'dataMax',
-              min: 'dataMin',
+              type: 'category',
+              //max: 'dataMax',
+              //min: 'dataMin',
               axisLabel: {
+                interval: 30,
                 fontSize: 12,
                 show: true,
                 showMinLabel: false,
                 color: '#888',
-                formatter: (value) => {
+                /*formatter: (value) => {
                   let a = echarts.format.formatTime('hh:mm', value)
                   //let a = echarts.time.format(value, 'hh:mm')
                   //let a = value
@@ -293,7 +447,7 @@
                     return '15:00        '
                   }
                   return a
-                },
+                },*/
               },
               axisLine: {
                 lineStyle: {
@@ -341,8 +495,12 @@
                   return value.toFixed(0)
                 },
                 color: (value, index) => {
+                  //console.log('color value is:' + parseFloat(value).toFixed(0))
+                  //console.log('lastprice is:' + this.lastPrice)
                   // 中间基准线的数值为黑色
-                  if (parseFloat(value).toFixed(0) === this.lastPrice) {
+                  if (
+                    parseFloat(value).toFixed(0) === this.lastPrice.toFixed(0)
+                  ) {
                     return this.NORMAL_COLOR
                   }
 
@@ -412,27 +570,26 @@
                 // y轴的数值向内显示
                 align: 'right',
                 formatter: (value, index) => {
-                  let persent =
-                    (value - this.klineData[0][3]) / this.klineData[0][3]
+                  let persent = (value - this.lastPrice) / this.lastPrice
                   persent = persent < 0 ? persent * -1 : persent
                   persent = persent * 100
-
+                  //console.log('persent is:' + persent.toFixed(2) + '%')
                   return persent.toFixed(2) + '%'
                 },
                 color: (value, index) => {
                   // 中间基准线的数值为黑色
-                  if (parseFloat(value).toFixed(2) === this.klineData[0][3]) {
-                    return '#33353C'
+                  if (parseFloat(value) === this.lastPrice) {
+                    return this.NORMAL_COLOR
                   }
 
                   // 上涨区域的数字为红色
-                  if (value > this.klineData[0][3]) {
-                    return '#E24528'
+                  if (value > this.lastPrice) {
+                    return this.UP_COLOR
                   }
 
                   // 下方下跌的数值为绿色
-                  if (value < this.klineData[0][3]) {
-                    return '#009933'
+                  if (value < this.lastPrice) {
+                    return this.DOWN_COLOR
                   }
                 },
               },

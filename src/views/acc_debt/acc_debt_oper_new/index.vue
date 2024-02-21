@@ -1,724 +1,467 @@
 <template>
-  <div class="table-container">
-    <vab-query-form>
-      <vab-query-form-left-panel>
-        <el-form
-          ref="form"
-          :model="queryForm"
-          :inline="true"
-          @submit.native.prevent
-        >
-          <el-form-item>
-            <el-autocomplete
-              v-model.trim="queryForm.payername"
-              :trigger-on-focus="false"
-              :fetch-suggestions="querySearchByJgName"
-              placeholder="开发商"
-              prefix-icon="el-icon-search"
-              clearable
-              @select="selectHandleByJgname"
-            ></el-autocomplete>
-          </el-form-item>
-          <el-form-item>
-            <el-autocomplete
-              v-model.trim="queryForm.payeracc"
-              :trigger-on-focus="false"
-              :fetch-suggestions="querySearchByJgAcc"
-              placeholder="监管账号"
-              prefix-icon="el-icon-search"
-              clearable
-              @select="selectHandleByJgAccount"
-            ></el-autocomplete>
-          </el-form-item>
-          <el-form-item>
-            <el-autocomplete
-              v-model.trim="queryForm.contractno"
-              :trigger-on-focus="false"
-              :fetch-suggestions="querySearchByContractno"
-              placeholder="协议编号"
-              prefix-icon="el-icon-search"
-              clearable
-              @select="selectHandleByContractno"
-            ></el-autocomplete>
-          </el-form-item>
-          <el-form-item>
-            <el-input
-              v-model="queryForm.recordno"
-              placeholder="合同号"
-              clearable
-              prefix-icon="el-icon-search"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-input
-              v-model="queryForm.ckr"
-              placeholder="存款人"
-              clearable
-              prefix-icon="el-icon-search"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-input
-              v-model="queryForm.price"
-              placeholder="记账金额"
-              clearable
-              prefix-icon="el-icon-search"
-            />
-          </el-form-item>
-          <el-form-item>
-            <el-select
-              v-model="queryForm.orgid"
-              clearable
-              placeholder="机构查询"
-              @change="$forceUpdate()"
-            >
-              <el-option
-                v-for="item in orgidlist"
-                :key="item.id"
-                :label="item.orgname"
-                :value="item.orgid"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-date-picker
-              v-model="date"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              value-format="yyyyMMdd"
-              @change="getdatepicker"
-            ></el-date-picker>
-          </el-form-item>
-          <el-form-item>
-            <el-select
-              v-model="queryForm.flag"
-              clearable
-              placeholder="资金来源"
-              @change="$forceUpdate()"
-            >
-              <el-option
-                v-for="item in options_zjxz"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-select
-              v-model="queryForm.isjz"
-              clearable
-              placeholder="记账状态"
-              @change="$forceUpdate()"
-            >
-              <el-option
-                v-for="item in options"
-                :key="item.value"
-                :label="item.label"
-                :value="item.value"
-              ></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button
-              icon="el-icon-search"
-              type="primary"
-              native-type="submit"
-              @click="handleQuery"
-            >
-              查询
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </vab-query-form-left-panel>
-      <vab-query-form-bottom-panel>
-        <el-button icon="el-icon-plus" type="primary" @click="handleAdd">
-          添加
-        </el-button>
-        <el-button icon="el-icon-delete" type="danger" @click="handleDelete">
-          删除
-        </el-button>
-        <el-button type="primary" @click="testMessage">baseMessage</el-button>
-        <el-button type="primary" @click="testALert">baseAlert</el-button>
-        <el-button type="primary" @click="testConfirm">baseConfirm</el-button>
-        <el-button type="primary" @click="testNotify">baseNotify</el-button>
-      </vab-query-form-bottom-panel>
-    </vab-query-form>
-
-    <el-table
-      ref="tableSort"
-      v-loading="listLoading"
-      border
-      style="width: 100%"
-      highlight-current-row
-      :data="list"
-      :element-loading-text="elementLoadingText"
-      :height="height"
-      @selection-change="setSelectRows"
-      @sort-change="tableSortChange"
-    >
-      <el-table-column
-        show-overflow-tooltip
-        type="selection"
-        width="55"
-      ></el-table-column>
-      <el-table-column show-overflow-tooltip label="序号" width="50" fixed>
-        <template #default="scope">
-          {{ scope.$index + 1 }}
-        </template>
-      </el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        prop="jgaccount"
-        label="监管账号"
-        width="120"
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="开发商"
-        prop="jgname"
-        width="245"
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="协议编号"
-        prop="xybh"
-        width="135"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="合同号"
-        prop="recordno"
-        width="135"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="存款人"
-        prop="ckr"
-        width="139"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        v-if="false"
-        show-overflow-tooltip
-        label="操作员"
-        prop="operator"
-        width="80"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="资金来源"
-        prop="zjxz"
-        width="70"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        v-if="false"
-        show-overflow-tooltip
-        label="记账标识"
-        prop="flag"
-        width="150"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        v-if="false"
-        show-overflow-tooltip
-        label="资金性质"
-        prop="cklb"
-        width="150"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="记账金额"
-        prop="price"
-        width="100"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        v-if="false"
-        show-overflow-tooltip
-        label="存款流水号"
-        prop="cklsh"
-        width="100"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="机构号"
-        prop="orgid"
-        width="70"
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="机构名称"
-        prop="orgname"
-        width="160"
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="记账日期"
-        prop="transdate"
-        width="90"
-        sortable
-      ></el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="记账状态"
-        prop="isjz"
-        width="90"
-      >
-        <template #default="{ row }">
-          <el-tag :type="row.isjz | statusFilter">
-            {{ row.isjz | statusForm }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column
-        show-overflow-tooltip
-        label="操作"
-        width="70px"
-        fixed="right"
-      >
-        <template #default="{ row }">
-          <el-button
-            :disabled="row.isjz === '1'"
-            type="text"
-            @click="handleEdit(row)"
-          >
-            执行
-          </el-button>
-        </template>
-      </el-table-column>
-    </el-table>
-    <el-pagination
-      :background="background"
-      :current-page="queryForm.pageNo"
-      :layout="layout"
-      :page-size="queryForm.pageSize"
-      :total="total"
-      @current-change="handleCurrentChange"
-      @size-change="handleSizeChange"
-    ></el-pagination>
-    <jz-table-edit-new
-      ref="edit-show"
-      @refresh-data="fetchData"
-    ></jz-table-edit-new>
-    <jz-table-add-new
-      ref="edit-add"
-      @refresh-data="fetchData"
-    ></jz-table-add-new>
-  </div>
+  <div
+    id="mychart"
+    className="Echarts"
+    style="width: 100%; height: 500px"
+  ></div>
 </template>
 
 <script>
-  import { GetAccInfoList } from '@/api/xzhouse_gjinfo'
-  import {
-    GetJzinfoNewList,
-    GetJzinfoNewListByChoose,
-  } from '@/api/xzhouse_jzinfo'
-  import JzTableEditNew from './components/JzTableEditNew'
-  import JzTableAddNew from './components/JzTableAddNew'
-  //import GjTableEdit from './components/GjTableEdit'
-  import store from '@/store'
+  import * as echarts from 'echarts/lib/echarts'
+  import klineData from './data/test1.json'
+
   export default {
-    name: 'ComprehensiveTable',
-    components: {
-      JzTableEditNew,
-      JzTableAddNew,
-    },
-    filters: {
-      statusFilter(status) {
-        const statusMap = {
-          1: 'success',
-          0: 'danger',
-          //deleted: 'danger',
-        }
-        return statusMap[status]
-      },
-      statusForm(status) {
-        const statusMap = {
-          1: '已记账',
-          0: 'POS未记账',
-          2: '贷款未记账',
-          //deleted: 'danger',
-        }
-        return statusMap[status]
-      },
-    },
     data() {
       return {
-        imgShow: true,
-        list: [],
-        imageList: [],
-        listLoading: true,
-        layout: 'total, sizes, prev, pager, next, jumper',
-        total: 0,
-        background: true,
-        selectRows: '',
-        elementLoadingText: '正在加载...',
-        queryForm: {
-          pageNo: 1,
-          pageSize: 20,
-          payeracc: '',
-          payername: '',
-          agent: '',
-          contractno: '',
-          recordno: '',
-          ckr: '',
-          price: '',
-          orgid: '',
-          orgname: '',
-          startdate: '',
-          enddate: '',
-          isjz: '',
-          flag: '',
-        },
-        options: [
-          {
-            value: '3',
-            label: '全部',
-          },
-          {
-            value: '0',
-            label: 'POS未记账',
-          },
-          {
-            value: '2',
-            label: '贷款未记账',
-          },
-          {
-            value: '1',
-            label: '已记账',
-          },
+        gridData1: [[,]],
+        gridData2: [[,]],
+        gridData3: [[,]],
+        gridData4: [[,]],
+        //upcolor: '#FF0000', //增长颜色
+        //upBorderColor: '#8A0000',
+        //downColor: '#008000', // 下跌颜色
+        //downBorderColor: '#008F28',
+        volumeColor1: [],
+        volumeColor2: [],
+        UP_COLOR: '#E24528',
+        DOWN_COLOR: '#009933',
+        NORMAL_COLOR: '#33353C',
+        priceMax: 0.0,
+        priceMin: 0.0,
+        priceInterval: 0.0,
+        volumeMax: 0,
+        volumeMin: 0,
+        volumeInterval: 0,
+        klineData: [], //k线图数据
+        hourData: [], //charts表格小时数据
+        xData: [],
+        culomnColor: [], //颜色
+        culomnValue: [],
+        lastPrice: 0.0,
+        gridtest: [
+          [1702948220, 2638],
+          [1702948259, 2640],
+          [1702948320, 2640],
+          [1702948379, 2639],
+          [1702948439, 2632],
+          [1702948507, 2638],
+          [1702948559, 2638],
+          [1702948619, 2638],
+          [1702948679, 2637],
+          [1702948740, 2637],
+          [1702948802, 2637],
+          [1702948867, 2636],
+          [1702948919, 2635],
+          [1702948983, 2633],
+          [1702949041, 2634],
+          [1702949099, 2633],
+          [1702949166, 2635],
+          [1702949252, 2635],
+          [1702949282, 2633],
+          [1702949339, 2635],
+          [1702949399, 2633],
+          [1702949463, 2636],
+          [1702949520, 2635],
+          [1702949580, 2634],
+          [1702949639, 2632],
+          [1702949701, 2637],
+          [1702949761, 2639],
+          [1702949821, 2641],
+          [1702949882, 2642],
+          [1702949940, 2643],
+          [1702949999, 2645],
+          [1702950061, 2642],
+          [1702950123, 2642],
+          [1702950179, 2640],
+          [1702950243, 2641],
+          [1702950303, 2641],
+          [1702950364, 2643],
+          [1702950420, 2644],
+          [1702950494, 2644],
+          [1702950543, 2644],
+          [1702950599, 2643],
+          [1702950660, 2641],
+          [1702950748, 2642],
+          [1702950782, 2643],
+          [1702950841, 2644],
+          [1702950904, 2643],
+          [1702950959, 2644],
+          [1702951029, 2644],
+          [1702951092, 2642],
+          [1702951140, 2643],
+          [1702951206, 2643],
+          [1702951270, 2643],
+          [1702951319, 2644],
+          [1702951379, 2647],
+          [1702951440, 2648],
+          [1702951501, 2649],
+          [1702951559, 2651],
+          [1702951624, 2650],
+          [1702951679, 2642],
+          [1702951746, 2644],
+          [1702951805, 2643],
+          [1702951866, 2643],
+          [1702951920, 2644],
+          [1702951979, 2643],
+          [1702952042, 2646],
+          [1702952102, 2643],
+          [1702953002, 2643],
+          [1702953059, 2650],
+          [1702953120, 2648],
+          [1702953182, 2645],
+          [1702953246, 2645],
+          [1702953299, 2646],
+          [1702953361, 2645],
+          [1702953431, 2641],
+          [1702953479, 2641],
+          [1702953544, 2644],
+          [1702953606, 2641],
+          [1702953673, 2641],
+          [1702953724, 2641],
+          [1702953779, 2643],
+          [1702953839, 2641],
+          [1702953903, 2642],
+          [1702953959, 2642],
+          [1702954019, 2639],
+          [1702954080, 2642],
+          [1702954140, 2640],
+          [1702954199, 2640],
+          [1702954259, 2639],
+          [1702954323, 2638],
+          [1702954380, 2638],
+          [1702954439, 2638],
+          [1702954508, 2639],
+          [1702954559, 2638],
+          [1702954620, 2633],
+          [1702954680, 2635],
+          [1702954740, 2636],
+          [1702954821, 2635],
+          [1702954864, 2636],
+          [1702954921, 2635],
+          [1702954979, 2635],
+          [1702955052, 2635],
+          [1702955099, 2635],
+          [1702955159, 2634],
+          [1702955220, 2634],
+          [1702955281, 2635],
+          [1702955340, 2631],
+          [1702955400, 2632],
+          [1702955463, 2634],
+          [1702955519, 2630],
+          [1702955579, 2629],
+          [1702955639, 2629],
+          [1702955700, 2624],
+          [1702955759, 2626],
+          [1702955824, 2629],
+          [1702955886, 2627],
+          [1702955941, 2629],
+          [1702956005, 2628],
+          [1702956060, 2632],
+          [1702956119, 2632],
+          [1702956180, 2629],
+          [1702956244, 2629],
         ],
-        options_zjxz: [
-          {
-            value: '1',
-            label: '全部',
-          },
-          {
-            value: '2',
-            label: '专用POS',
-          },
-          {
-            value: '0',
-            label: '银行贷款',
-          },
-        ],
-        date: [],
-        orgidlist: [],
-        accinfolist: [],
-        accinfo: { jgaccount: '', jgname: '', contractno: '' },
-        timeout: '',
       }
     },
-    computed: {
-      height() {
-        return this.$baseTableHeight()
-      },
-    },
-    created() {
-      this.fetchData()
-    },
-    beforeDestroy() {},
     mounted() {
-      //this.fetchData()
+      // 数据初始化
+      this.initData()
+      // 图标初始化
+      this.initEcharts()
     },
     methods: {
-      tableSortChange() {
-        const imageList = []
-        this.$refs.tableSort.tableData.forEach((item, index) => {
-          imageList.push(item.img)
-        })
-        this.imageList = imageList
-      },
-      setSelectRows(val) {
-        this.selectRows = val
-      },
-      handleAdd() {
-        this.$refs['edit-add'].showEdit()
-      },
-      handleEdit(row) {
-        this.$refs['edit-show'].showEdit(row)
-      },
-      handleDelete(row) {
-        if (row.id) {
-          this.$baseConfirm('你确定要删除当前项吗', null, async () => {
-            const { msg } = await doDelete({ ids: row.id })
-            this.$baseMessage(msg, 'success')
-            this.fetchData()
-          })
-        } else {
-          if (this.selectRows.length > 0) {
-            const ids = this.selectRows.map((item) => item.id).join()
-            this.$baseConfirm('你确定要删除选中项吗', null, async () => {
-              const { msg } = await doDelete({ ids: ids })
-              this.$baseMessage(msg, 'success')
-              this.fetchData()
-            })
-          } else {
-            this.$baseMessage('未选中任何行', 'error')
-            return false
-          }
-        }
-      },
-      handleSizeChange(val) {
-        this.queryForm.pageSize = val
-        this.fetchData()
-      },
-      handleCurrentChange(val) {
-        this.queryForm.pageNo = val
-        this.fetchData()
-      },
-      handleQuery() {
-        this.queryForm.pageNo = 1
-        this.fetchData()
-      },
-      async fetchData() {
-        this.listLoading = true
-        /* console.log('payeracc is' + this.queryForm.payeracc)
-        console.log('payeracc is' + this.queryForm.contractno)
-        console.log('payeracc is' + this.queryForm.startdate)
-        console.log('payeracc is' + this.queryForm.enddate)
-        console.log('payeracc is' + this.queryForm.payername)
-        console.log('payeracc is' + this.queryForm.orgid)*/
-        if (
-          this.queryForm.payeracc === '' &&
-          this.queryForm.contractno === '' &&
-          this.queryForm.startdate === '' &&
-          this.queryForm.enddate === '' &&
-          this.queryForm.payername === '' &&
-          this.queryForm.orgid === '' &&
-          this.queryForm.ckr === '' &&
-          this.queryForm.recordno === '' &&
-          this.queryForm.flag === '' &&
-          this.queryForm.price === '' &&
-          (this.queryForm.isjz === '' || this.queryForm.isjz === '3')
-        ) {
-          try {
-            const { data, totalCount, code, orgidlist } =
-              await GetJzinfoNewList(
-                store.getters['user/username'],
-                this.queryForm.pageNo,
-                this.queryForm.pageSize
-              )
-            //console.log('date is:' + date)
-            //console.log('usernamesss is:' + store.getters['user/username'])
-
-            if (code !== '200') {
-              this.list = null
-            } else {
-              this.list = data
-              this.orgidlist = orgidlist
-            }
-            //console.log(data)
-            const imageList = []
-            data.forEach((item, index) => {
-              imageList.push(item.img)
-            })
-            this.imageList = imageList
-            this.total = totalCount
-            //console.log('list is :' + data)
-            setTimeout(() => {
-              this.listLoading = false
-              //this.listLoading.close()
-            }, 500)
-          } catch (e) {
-            this.list = null
-            this.listLoading = false
-          }
-        } else {
-          try {
-            const { data, totalCount, code } = await GetJzinfoNewListByChoose(
-              store.getters['user/username'],
-              this.queryForm.payername,
-              this.queryForm.payeracc,
-              this.queryForm.contractno,
-              this.queryForm.recordno,
-              this.queryForm.ckr,
-              this.queryForm.price,
-              this.queryForm.flag,
-              this.queryForm.startdate,
-              this.queryForm.enddate,
-              this.queryForm.isjz,
-              this.queryForm.orgid,
-              this.queryForm.pageNo,
-              this.queryForm.pageSize
-            )
-            if (code === '200') {
-              this.list = data
-              const imageList = []
-              data.forEach((item, index) => {
-                imageList.push(item.img)
-              })
-              this.imageList = imageList
-              this.total = totalCount
-              //console.log('list is :' + data)
-              setTimeout(() => {
-                this.listLoading = false
-                //this.listLoading.close()
-              }, 500)
-            }
-          } catch (e) {
-            this.list = null
-            this.listLoading = false
-          }
-          //console.log(data)
-        }
-      },
-      testMessage() {
-        this.$baseMessage('test1', 'success')
-      },
-      testALert() {
-        this.$baseAlert('11')
-        this.$baseAlert('11', '自定义标题', () => {
-          /* 可以写回调; */
-        })
-        this.$baseAlert('11', null, () => {
-          /* 可以写回调; */
-        })
-      },
-      testConfirm() {
-        this.$baseConfirm(
-          '你确定要执行该操作?',
-          null,
-          () => {
-            /* 可以写回调; */
-          },
-          () => {
-            /* 可以写回调; */
-          }
+      getFormatTime(stamp) {
+        let year = new Date(stamp).getFullYear()
+        let month = new Date(stamp).getMonth() + 1
+        month = month < 10 ? '0' + month : month
+        let date = new Date(stamp).getDate()
+        date = date < 10 ? '0' + date : date
+        return (
+          year +
+          '-' +
+          month +
+          '-' +
+          date +
+          ' ' +
+          new Date(stamp).toLocaleTimeString('chinese', { hour12: false })
         )
       },
-      testNotify() {
-        this.$baseNotify('测试消息提示', 'test', 'success', 'bottom-right')
-      },
-      createStateFilterByJgname(queryString) {
-        return (list) => {
-          return list.jgname.indexOf(queryString) >= 0
-        }
-      },
+      initData() {
+        this.klineData = klineData
+        let jsonData = klineData
+        this.lastPrice = jsonData[0][6]
+        //console.log('jsonData is:' + jsonData)
+        //console.log('lastprice is:' + this.lastPrice)
+        for (let i = 0; i < jsonData.length; i++) {
+          /*hourData.push([
+          i,
+          jsonData[i][2],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][8],
+        ])*/
+          //if (i < 121)
+          {
+            //上午数据
+            if (jsonData[i][4] > this.priceMax) {
+              this.priceMax = jsonData[i][4]
+            }
+            if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
+              this.priceMin = jsonData[i][5]
+            }
+            this.gridData1.push([jsonData[i][14], Number(jsonData[i][3])])
 
-      createStateFilterByContractno(queryString) {
-        return (list) => {
-          return list.contractno.indexOf(queryString) >= 0
+            if (jsonData[i][10] > this.volumeMax) {
+              this.volumeMax = jsonData[i][10]
+            }
+            if (jsonData[i][10] < this.volumeMin || this.volumeMin === 0) {
+              this.volumeMin = jsonData[i][10]
+            }
+            if (i === 0) {
+              if (jsonData[i][3] >= jsonData[i][6]) {
+                this.volumeColor1.push(this.UP_COLOR)
+              } else {
+                this.volumeColor1.push(this.DOWN_COLOR)
+              }
+            } else {
+              if (jsonData[i][3] >= jsonData[i - 1][3]) {
+                this.volumeColor1.push(this.UP_COLOR)
+              } else {
+                this.volumeColor1.push(this.DOWN_COLOR)
+              }
+            }
+            this.gridData2.push([jsonData[i][14], Number(jsonData[i][10])])
+          } /*else {
+            //下午数据
+            if (jsonData[i][4] > this.priceMax) {
+              this.priceMax = jsonData[i][4]
+            }
+            if (jsonData[i][5] < this.priceMin || this.priceMin === 0) {
+              this.priceMin = jsonData[i][5]
+            }
+            this.gridData3.push([jsonData[i][14], Number(jsonData[i][3])])
+            if (jsonData[i][10] > this.volumeMax) {
+              this.volumeMax = jsonData[i][10]
+            }
+            if (jsonData[i][10] < this.volumeMin || this.volumeMin === 0) {
+              this.volumeMin = jsonData[i][10]
+            }
+            if (jsonData[i][3] >= jsonData[i - 1][3]) {
+              this.volumeColor2.push(this.UP_COLOR)
+            } else {
+              this.volumeColor2.push(this.DOWN_COLOR)
+            }
+            this.gridData4.push([jsonData[i][14], Number(jsonData[i][10])])
+          }*/
+        }
+        //this.gridtest.push('[' + this.gridData1 + ']')
+        //console.log('gridtest is:' + this.gridtest)
+        console.log('grid1 data is:' + this.gridData1)
+        console.log('grid2 data is:' + this.gridData2)
+        console.log('grid3 data is:' + this.gridData3)
+        console.log('grid4 data is:' + this.gridData4)
+
+        if (
+          (this.lastPrice - this.priceMax) * -1 >
+          this.lastPrice - this.priceMin
+        ) {
+          this.priceMin = this.lastPrice - (this.lastPrice - this.priceMax) * -1
+        } else {
+          this.priceMax = this.lastPrice + (this.lastPrice - this.priceMin)
+        }
+
+        this.priceInterval = (this.priceMax - this.lastPrice) / 4
+        this.volumeInterval = this.volumeMax / 2
+        //this.hourData = this.splitData(this.klineData)
+        //this.hourData = this.klineData
+        //this.initxData()
+        //this.initEcharts()
+      },
+      initEcharts() {
+        const option = {
+          grid: [
+            // 第一个grid
+            {
+              top: 450, // 图表的外边距
+              height: 100, // 图表的高度
+              left: '5%',
+              width: '95%', //因为是左右各一个图表，使用百分比的方式显得更方便，
+              containLabel: true,
+            },
+          ],
+          // 多个图表则会存在对个x轴y轴，所以这里的配置我们也换成数组的方式
+          // x轴配置，
+          xAxis: [
+            // 第一个grid的x轴属性
+            {
+              // 告诉echarts，这个第二个grid的x轴
+              gridIndex: 0,
+              // 坐标轴是否留白
+              boundaryGap: false,
+              // x轴的刻度
+              axisTick: { show: false },
+              //max: '200',
+              //min: '0',
+              splitNumber: 10,
+              type: 'category',
+              axisLabel: {
+                fontSize: 12,
+                interval: 60,
+                show: true,
+                color: '#888',
+                rotate: 45,
+                /*formatter: (value) => {
+                  //let a = echarts.format.formatTime('hh:mm', value)
+                  let a = echarts.time.format(value, 'hh:mm')
+                  //let a = value
+                  console.log('time value is:' + value)
+                  console.log('a value is：' + a)
+                  if (a === '11:30') {
+                    return ''
+                  }
+                  if (a >= '10:15' && a <= '10:29') {
+                    return ''
+                  }
+                  if (a === '09:00') {
+                    return '        09:00'
+                  }
+                  return a
+                },*/
+                /*formatter: (value, index) => {
+                  let dateTime = this.getFormatTime(value)
+                  dateTime = dateTime.substring(0, dateTime.length - 3)
+                  return dateTime.replace(' ', '\n')
+                },*/
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#1b3ef3',
+                },
+              },
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+            },
+            // 第二个grid的x轴属性
+          ],
+          // y轴配置
+          yAxis: [
+            // 第一个grid的y轴属性
+            // 第一个grid的y轴右侧
+            // 第二个grid的y轴
+            {
+              // 去掉刻度值旁边的指示线
+
+              axisTick: { show: true },
+              splitNumber: 3,
+              gridIndex: 0,
+              interval: this.volumeInterval,
+              max: this.volumeMax,
+              min: 0,
+              splitLine: {
+                lineStyle: {
+                  color: '#ECEEF2',
+                  // 设置线条喂风格为虚线
+                  type: 'dashed',
+                },
+              },
+              axisLine: {
+                lineStyle: {
+                  color: '#4c77f8',
+                },
+              },
+              axisLabel: {
+                //设置显示坐标轴的数值为不显示
+                show: false,
+              },
+            },
+          ],
+
+          dataZoom: [
+            {
+              type: 'inside',
+              xAxisIndex: [0, 1],
+              start: 50, //展示的数据范围，默认为50%-100%
+              end: 100,
+            },
+            {
+              show: true,
+              xAxisIndex: [0, 1],
+              type: 'slider',
+              top: '90%',
+              start: 50, //展示的数据范围，默认为50%-100%
+              end: 100,
+            },
+          ],
+          // 数据可以通过xAxisIndex，yAxisIndex属性，来指定是哪个grid的数据
+          series: [
+            // 第一个图表的数据
+            {
+              xAxisIndex: 0,
+              yAxisIndex: 0,
+              // 柱状图柱子宽度
+              barWidth: 1,
+              data: this.gridData2,
+              type: 'bar',
+              // 设置柱状图颜色
+              itemStyle: {
+                normal: {
+                  color: (params) => {
+                    return this.volumeColor1[params.dataIndex]
+                  },
+                },
+              },
+            },
+          ],
+        }
+        const myChart = echarts.init(document.getElementById('mychart'))
+        myChart.setOption(option)
+        //随着屏幕大小调节图表
+        //window.addEventListener('resize', () => {
+        // myChart.resize()
+        //})
+      },
+      // 横坐标数据处理
+      initxData() {
+        for (let i = 0; i < this.klineData.length; i++) {
+          this.xData[i] = this.klineData[i][8]
+          //console.log('klineData Row is:' + this.klineData[i][1])
+        }
+        this.initCulomnColor()
+      },
+      // 初始化交易数据和交易柱状图颜色参数
+      initCulomnColor() {
+        this.culomnColor[0] = this.klineData[0][7] > 0 ? 1 : -1
+        this.culomnValue[0] = [0, this.klineData[0][3], -1]
+        for (let i = 1; i < this.klineData.length; i++) {
+          this.culomnColor[i] =
+            this.klineData[i][2] > this.klineData[i - 1][2] ? 1 : -1
+          this.culomnValue[i] = [i, this.klineData[i][3], this.culomnColor[i]]
         }
       },
-      createStateFilterByJgAccount(queryString) {
-        return (list) => {
-          return list.jgaccount.indexOf(queryString) >= 0
-        }
-      },
-      querySearchByJgAcc(queryString, callback) {
-        GetAccInfoList(store.getters['user/username'])
-          .then((res) => {
-            let retdata = res.data
-            if (res.code === '200') {
-              retdata.forEach((item, index) => {
-                item.value = item.jgaccount
-              })
-              let jgaccounts = (this.accinfolist = retdata)
-              let results = queryString
-                ? jgaccounts.filter(
-                    this.createStateFilterByJgAccount(queryString)
-                  )
-                : jgaccounts
-              results = this.arrayReuse(results)
-              clearTimeout(this.timeout)
-              this.timeout = setTimeout(() => {
-                callback(results)
-              }, 100 * Math.random())
-            } else {
-              this.$message({
-                type: 'error',
-                message: res.data.code,
-              })
-            }
-          })
-          .catch((err) => {
-            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
-          })
-      },
-      querySearchByContractno(queryString, callback) {
-        GetAccInfoList(store.getters['user/username'])
-          .then((res) => {
-            let retdata = res.data
-            if (res.code === '200') {
-              retdata.forEach((item, index) => {
-                item.value = item.contractno
-              })
-              let contractnos = (this.accinfolist = retdata)
-              let results = queryString
-                ? contractnos.filter(
-                    this.createStateFilterByContractno(queryString)
-                  )
-                : contractnos
-              results = this.arrayReuse(results)
-              clearTimeout(this.timeout)
-              this.timeout = setTimeout(() => {
-                callback(results)
-              }, 100 * Math.random())
-            } else {
-              this.$message({
-                type: 'error',
-                message: res.data.code,
-              })
-            }
-          })
-          .catch((err) => {
-            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
-          })
-      },
-      querySearchByJgName(queryString, callback) {
-        GetAccInfoList(store.getters['user/username'])
-          .then((res) => {
-            let retdata = res.data
-            if (res.code === '200') {
-              retdata.forEach((item, index) => {
-                item.value = item.jgname
-              })
-              let jgnames = (this.accinfolist = retdata)
-              let results = queryString
-                ? jgnames.filter(this.createStateFilterByJgname(queryString))
-                : jgnames
-              results = this.arrayReuse(results)
-              clearTimeout(this.timeout)
-              this.timeout = setTimeout(() => {
-                callback(results)
-              }, 100 * Math.random())
-            } else {
-              this.$message({
-                type: 'error',
-                message: res.data.code,
-              })
-            }
-          })
-          .catch((err) => {
-            callback([]) //如果搜索不到数据需要传空   才会隐藏下拉框
-          })
-      },
-      selectHandleByJgname(item) {
-        this.queryForm.payername = item.jgname
-      },
-      selectHandleByJgAccount(item) {
-        this.queryForm.payeracc = item.jgaccount
-      },
-      selectHandleByContractno(item) {
-        this.queryForm.contractno = item.contractno
-      },
-      arrayReuse(arr) {
-        const res = new Map()
-        return arr.filter((arr) => !res.has(arr.value) && res.set(arr.value, 1))
-      },
-      getdatepicker() {
-        this.queryForm.startdate = this.date ? this.date[0] : ''
-        this.queryForm.enddate = this.date ? this.date[1] : ''
+      // 数据计算以及拆分，将json数据转为数组数据
+      splitData(jsonData) {
+        /*console.log('kinlinedata is:' + jsonData)
+      const hourData = []
+      for (let i = 0; i < jsonData.length; i++) {
+        hourData.push([
+          i,
+          jsonData[i][2],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][8],
+        ])
+      }
+      console.log('hourData is :' + hourData)
+      return hourData*/
       },
     },
   }
