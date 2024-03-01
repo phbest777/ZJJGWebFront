@@ -194,14 +194,14 @@
         //console.log('lastprice is:' + this.lastPrice)
         for (let i = 0; i < jsonData.length; i++) {
           /*hourData.push([
-            i,
-            jsonData[i][2],
-            jsonData[i][7],
-            jsonData[i][3],
-            jsonData[i][7],
-            jsonData[i][3],
-            jsonData[i][8],
-          ])*/
+          i,
+          jsonData[i][2],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][8],
+        ])*/
           if (i < 121) {
             //上午数据
             if (jsonData[i][4] > this.priceMax) {
@@ -357,27 +357,27 @@
                 show: true,
                 color: '#888',
                 /*formatter: (value) => {
-                  //let a = echarts.format.formatTime('hh:mm', value)
-                  let a = echarts.time.format(value, 'hh:mm')
-                  //let a = value
-                  console.log('time value is:' + value)
-                  console.log('a value is：' + a)
-                  if (a === '11:30') {
-                    return ''
-                  }
-                  if (a >= '10:15' && a <= '10:29') {
-                    return ''
-                  }
-                  if (a === '09:00') {
-                    return '        09:00'
-                  }
-                  return a
-                },*/
+                //let a = echarts.format.formatTime('hh:mm', value)
+                let a = echarts.time.format(value, 'hh:mm')
+                //let a = value
+                console.log('time value is:' + value)
+                console.log('a value is：' + a)
+                if (a === '11:30') {
+                  return ''
+                }
+                if (a >= '10:15' && a <= '10:29') {
+                  return ''
+                }
+                if (a === '09:00') {
+                  return '        09:00'
+                }
+                return a
+              },*/
                 /*formatter: (value, index) => {
-                  let dateTime = this.getFormatTime(value)
-                  dateTime = dateTime.substring(0, dateTime.length - 3)
-                  return dateTime.replace(' ', '\n')
-                },*/
+                let dateTime = this.getFormatTime(value)
+                dateTime = dateTime.substring(0, dateTime.length - 3)
+                return dateTime.replace(' ', '\n')
+              },*/
               },
               axisLine: {
                 lineStyle: {
@@ -436,18 +436,18 @@
                 showMinLabel: false,
                 color: '#888',
                 /*formatter: (value) => {
-                  let a = echarts.format.formatTime('hh:mm', value)
-                  //let a = echarts.time.format(value, 'hh:mm')
-                  //let a = value
-                  console.log('value is' + value)
-                  if (a === '13:00') {
-                    return '11:30/13:00'
-                  }
-                  if (a === '15:00') {
-                    return '15:00        '
-                  }
-                  return a
-                },*/
+                let a = echarts.format.formatTime('hh:mm', value)
+                //let a = echarts.time.format(value, 'hh:mm')
+                //let a = value
+                console.log('value is' + value)
+                if (a === '13:00') {
+                  return '11:30/13:00'
+                }
+                if (a === '15:00') {
+                  return '15:00        '
+                }
+                return a
+              },*/
               },
               axisLine: {
                 lineStyle: {
@@ -720,20 +720,20 @@
       // 数据计算以及拆分，将json数据转为数组数据
       splitData(jsonData) {
         /*console.log('kinlinedata is:' + jsonData)
-        const hourData = []
-        for (let i = 0; i < jsonData.length; i++) {
-          hourData.push([
-            i,
-            jsonData[i][2],
-            jsonData[i][7],
-            jsonData[i][3],
-            jsonData[i][7],
-            jsonData[i][3],
-            jsonData[i][8],
-          ])
-        }
-        console.log('hourData is :' + hourData)
-        return hourData*/
+      const hourData = []
+      for (let i = 0; i < jsonData.length; i++) {
+        hourData.push([
+          i,
+          jsonData[i][2],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][7],
+          jsonData[i][3],
+          jsonData[i][8],
+        ])
+      }
+      console.log('hourData is :' + hourData)
+      return hourData*/
       },
     },
   }
