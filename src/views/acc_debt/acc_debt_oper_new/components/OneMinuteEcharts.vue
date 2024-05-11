@@ -1,5 +1,8 @@
 <template>
-  <div ref="myChart"></div>
+  <div ref="myChart" style="width: 100%; height: 650px"></div>
+  <!--<div>
+    <h3>标题：{{ params.WorkDay }}</h3>
+  </div>!-->
 </template>
 
 <script>
@@ -14,9 +17,26 @@
 
   export default {
     name: 'OneMinuteEcharts',
+    props: {
+      params: {
+        type: Object,
+        required: true,
+        // eslint-disable-next-line vue/require-prop-type-constructor
+        Loginuser: '',
+        // eslint-disable-next-line vue/require-prop-type-constructor
+        Instrumentid: '',
+        // eslint-disable-next-line vue/require-prop-type-constructor
+        Instrumentname: '',
+        WorkDay: '',
+        // eslint-disable-next-line vue/require-prop-type-constructor
+        Flag: '',
+      },
+    },
     //获取父组件的数据,（没必要获取父组件的数据可以删掉）
     data() {
       return {
+        echartsTitle: '',
+        myChart: null,
         interval_timer: null,
         fileindex: 0,
         // 实时数据数组
@@ -125,6 +145,13 @@
         ],
         // 折线图echarts初始化选项
         echartsOption: {
+          title: {
+            text: this.echartsTitle,
+            left: 'center',
+            textStyle: {
+              color: 'blue',
+            },
+          },
           grid: [
             // 第一个grid
             {
@@ -435,6 +462,9 @@
                   },
                 ],
               },
+              endLabel: {
+                show: true,
+              },
               //areaStyle: {},
             },
             // 第二个图表的数据
@@ -480,6 +510,9 @@
                     xAxis: '11:30',
                   },
                 ],
+                endLabel: {
+                  show: true,
+                },
               },
             },
             {
@@ -509,6 +542,25 @@
         },
       }
     },
+    watch: {
+      /*'params.WorkDay': function (newValue, oldValue) {
+        console.log('changed value is:' + newValue)
+        clearInterval(this.interval_timer)
+        //this.myChart.dispose()
+        this.getOneMinuteChart()
+      },*/
+      params: {
+        handler(newValue, oldValue) {
+          console.log('changed value is:' + newValue.Instrumentname)
+          clearInterval(this.interval_timer)
+          //this.myChart.dispose()
+          this.echartsTitle = newValue.Instrumentname
+          this.getOneMinuteChart()
+        },
+        deep: true,
+      },
+    },
+
     //监听父组件传过来的值,判断是否开启定时器，（没必要获取父组件的数据可以删掉用mounted() 周期函数）
 
     //不需要父组件数据的用这个
@@ -521,13 +573,58 @@
       }
     },
     methods: {
+      echartsDataClear() {
+        this.echartsOption.title.text = this.echartsTitle
+        this.dataIndex = 0 //datagrid 索引
+        this.fileindex = 0
+        this.prePrice = 0.0
+        this.gridData1.splice(0, this.gridData1.length)
+        this.gridData2.splice(0, this.gridData2.length)
+        this.gridData3.splice(0, this.gridData3.length)
+        this.gridData4.splice(0, this.gridData4.length)
+        this.volumeColor1.splice(0)
+        this.volumeColor2.splice(0)
+        this.UP_COLOR = '#E24528'
+        this.DOWN_COLOR = '#009933'
+        this.NORMAL_COLOR = '#33353C'
+        this.priceMax = 0.0
+        this.priceMin = 0.0
+        this.priceInterval = 0.0
+        this.volumeMax = 0
+        this.volumeMin = 0
+        this.volumeInterval = 0
+        this.klineData.splice(0) //k线图数据
+        this.xData.splice(0)
+        this.culomnColor.splice(0) //颜色
+        this.culomnValue.splice(0)
+        this.lastPrice = 0.0
+        this.echartsOption.series[0].data = this.gridData1
+        this.echartsOption.series[1].data = this.gridData2
+        this.echartsOption.yAxis[0].min = this.priceMin
+        this.echartsOption.yAxis[0].max = this.priceMax
+        this.echartsOption.yAxis[0].interval = this.priceInterval
+        this.echartsOption.yAxis[1].max = this.volumeMax
+        this.echartsOption.yAxis[1].interval = this.volumeInterval
+        this.echartsOption.yAxis[2].min = this.priceMin
+        this.echartsOption.yAxis[2].max = this.priceMax
+        this.echartsOption.yAxis[2].interval = this.priceInterval
+      },
       getOneMinuteChart() {
-        this.myChart = echarts.init(this.$refs.myChart, 'light') // 初始化echarts, theme为light
+        this.myChart = echarts.init(this.$refs.myChart, 'light')
+        this.echartsTitle = this.params.Instrumentname // 初始化echarts, theme为light
+        this.myChart.clear()
+        this.echartsDataClear()
+        //this.echartsOption && this.myChart.option(this.echartsOption, true)
         this.myChart.setOption(this.echartsOption) // echarts设置初始化选项
-        this.querydata.username = store.getters['user/username']
-        this.querydata.instrumentid = 'SA405'
-        this.querydata.workday = '20231222'
-        this.querydata.flag = '0'
+        //this.querydata.username = store.getters['user/username']
+        this.querydata.username = this.params.Loginuser
+        this.querydata.instrumentid = this.params.Instrumentid
+        this.querydata.workday = this.params.WorkDay
+        this.querydata.flag = this.params.Flag
+        console.log('username is:' + this.querydata.username)
+        console.log('instrumentid is:' + this.querydata.instrumentid)
+        console.log('workday is:' + this.querydata.workday)
+        console.log('flag is:' + this.querydata.flag)
         this.addData()
         this.querydata.flag = '1'
         //setInterval(this.addData(), 60000) // 每三秒更新实时数据到折线图
@@ -569,9 +666,12 @@
           const { data, code, msg } = await GetOneMinuteMD(this.querydata)
           this.klineData = data
           this.querydata.flag = '1'
+          if (data.length === 344) {
+            clearInterval(this.interval_timer)
+          }
         } else {
-          this.querydata.updatemin = this.timearray[this.fileindex]
-          //this.querydata.updatemin = this.getTime()
+          //this.querydata.updatemin = this.timearray[this.fileindex]
+          this.querydata.updatemin = this.getTime()
           const { data, code, msg } = await GetOneMinuteMD(this.querydata)
           this.klineData = data
           this.fileindex += 1
@@ -579,7 +679,7 @@
         let jsonData = this.klineData
         this.lastPrice = jsonData[0]['presettlementprice']
         console.log('jsonData length is:' + jsonData.length)
-        //console.log('jsonData is:' + jsonData[0]['presettlementprice'])
+        console.log('jsonData is:' + jsonData[0]['presettlementprice'])
         //console.log('jsonData1 is:' + jsonData)
         //console.log('lastprice is:' + this.lastPrice)
         for (let i = 0; i < jsonData.length; i++) {
@@ -654,6 +754,9 @@
         this.echartsOption.yAxis[2].min = this.priceMin
         this.echartsOption.yAxis[2].max = this.priceMax
         this.echartsOption.yAxis[2].interval = this.priceInterval
+        //console.log('pricemin is ' + this.priceMin)
+        //console.log('pricemax is ' + this.priceMin)
+        //console.log('priceinterval is ' + this.priceInterval)
         this.myChart.setOption(this.echartsOption)
         //})
         //})
