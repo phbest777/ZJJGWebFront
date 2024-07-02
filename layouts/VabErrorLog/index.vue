@@ -1,7 +1,7 @@
 <template>
   <div v-if="errorLogs.length > 0">
     <el-badge
-      v-if="checkPermission(['001', '002'])"
+      v-if="checkPermission(['001', '0002'])"
       :value="errorLogs.length"
       @click.native="dialogTableVisible = true"
     >
